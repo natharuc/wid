@@ -24,7 +24,7 @@ test('historical facts preserve all task states, references and unknown time des
     const { task } = await work.create(
       {
         title: `Historic ${status}`,
-        context: 'Pesquisa livre',
+        context: 'Free research',
         references: [{ label: 'Current link', url: 'https://example.com/current' }],
         idempotencyKey: randomUUID(),
       },
@@ -59,15 +59,15 @@ test('historical facts preserve all task states, references and unknown time des
       assert.equal(first.event.recordedAt, fixedNow);
       assert.deepEqual(first.event.source, source);
       assert.deepEqual(first.event.references, input.references);
-      assert.equal(first.event.context, 'Pesquisa livre');
+      assert.equal(first.event.context, 'Free research');
       assert.equal(first.event.effort, undefined);
       assert.deepEqual(await work.record(input, source), JSON.parse(JSON.stringify(first)));
       await assert.rejects(
         work.record({ ...input, note: 'Different fact under same key' }, source),
-        /conteúdo diferente/,
+        /different content/,
       );
     }
-    const detail = await work.detail(task.id, 'America/Sao_Paulo', 'pesquisa livre');
+    const detail = await work.detail(task.id, 'America/Sao_Paulo', 'free research');
     assert.equal(detail.task.status, status);
     assert.deepEqual(
       detail.days.map((day) => day.day),
@@ -94,7 +94,7 @@ test('historical facts preserve all task states, references and unknown time des
             },
             source,
           ),
-          /encerrada/,
+          /closed/,
         );
   }
 });
@@ -122,7 +122,7 @@ test('historical notes require a real timestamp and reject effort, context chang
     { references: [{ label: 'Unsafe', url: 'javascript:alert(1)' }] },
   ])
     await assert.rejects(work.record({ ...input, ...invalid }, source));
-  await assert.rejects(work.record({ ...input, taskId: randomUUID() }, source), /não encontrada/);
+  await assert.rejects(work.record({ ...input, taskId: randomUUID() }, source), /not found/);
   assert.equal((await work.detail(task.id, 'America/Sao_Paulo')).events.length, 1);
   const valid = await work.record({ ...input, references: [] }, source);
   assert.equal(valid.task.status, 'planned');

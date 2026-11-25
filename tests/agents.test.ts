@@ -58,13 +58,13 @@ test('unowned WID entries are refused without changing global files or state', a
     await writeFile(join(home, '.codex', 'config.toml'), config);
     const settings = new SettingsStore(join(home, 'data'));
     const manager = new AgentManager(settings, '/wid/cli.js', home);
-    await assert.rejects(manager.setEnabled('codex', true), /não pertence/);
+    await assert.rejects(manager.setEnabled('codex', true), /does not belong/);
     assert.equal(await readFile(join(home, '.codex', 'config.toml'), 'utf8'), config);
     assert.equal((await settings.read()).agents.codex, false);
     const managedElsewhere =
       '# wid:begin\n[mcp_servers.wid]\ncommand = "node"\nargs = ["/other/wid/cli.js", "mcp"]\n# wid:end\n';
     await writeFile(join(home, '.codex', 'config.toml'), managedElsewhere);
-    await assert.rejects(manager.setEnabled('codex', true), /outra instalação/);
+    await assert.rejects(manager.setEnabled('codex', true), /another installation/);
     assert.equal(await readFile(join(home, '.codex', 'config.toml'), 'utf8'), managedElsewhere);
   } finally {
     await rm(home, { recursive: true, force: true });
@@ -154,7 +154,7 @@ test('Copilot, Gemini and OpenCode configurations preserve JSONC, other servers 
           ? '{"mcp":{"servers":{"wid":{"type":"local","command":["other"]}}}}'
           : '{"mcpServers":{"wid":{"command":"other"}}}';
       await writeFile(paths.config, conflict);
-      await assert.rejects(manager.setEnabled(id, true), /outra instalação/);
+      await assert.rejects(manager.setEnabled(id, true), /another installation/);
       assert.equal(await readFile(paths.config, 'utf8'), conflict);
     }
     assert.equal((await manager.list()).length, 6);
@@ -163,7 +163,7 @@ test('Copilot, Gemini and OpenCode configurations preserve JSONC, other servers 
     await assert.rejects(manager.setEnabled('opencode', true), /OpenCode 2/);
     const copilot = await agentPaths('copilot', home);
     await writeFile(copilot.config, '{ invalid json');
-    await assert.rejects(manager.setEnabled('copilot', true), /inválida/);
+    await assert.rejects(manager.setEnabled('copilot', true), /Invalid/);
     assert.equal(await readFile(copilot.config, 'utf8'), '{ invalid json');
   } finally {
     await rm(home, { recursive: true, force: true });

@@ -4,7 +4,7 @@ import type { WorkEvent } from './api';
 import { evidenceLabel, phaseLabel, formatDay } from './workLabels';
 
 const formatInstant = (value: string, timezone: string) =>
-  new Intl.DateTimeFormat('pt-BR', {
+  new Intl.DateTimeFormat('en', {
     dateStyle: 'short',
     timeStyle: 'short',
     timeZone: timezone,
@@ -24,7 +24,7 @@ export function WorkEvidenceDetails({
   return (
     <details className="group text-sm">
       <summary className="cursor-pointer text-primary text-xs font-medium py-1">
-        {evidence.length ? `Ver evidências (${evidence.length})` : 'Ver registro de origem'}
+        {evidence.length ? `View evidence (${evidence.length})` : 'View source record'}
       </summary>
       <div className="mt-3 space-y-4 border-l-2 border-base-300 pl-4">
         {evidence.length ? (
@@ -39,11 +39,11 @@ export function WorkEvidenceDetails({
                   {item.occurredAt
                     ? formatInstant(item.occurredAt, timezone)
                     : item.day
-                      ? `${formatDay(item.day)} · horário não informado`
-                      : 'Horário original não informado'}
+                      ? `${formatDay(item.day)} · time not provided`
+                      : 'Original time not provided'}
                 </p>
                 {item.sourceId && (
-                  <p className="text-xs text-base-content/60 break-all">Fonte: {item.sourceId}</p>
+                  <p className="text-xs text-base-content/60 break-all">Source: {item.sourceId}</p>
                 )}
               </li>
             ))}
@@ -51,22 +51,22 @@ export function WorkEvidenceDetails({
         ) : (
           <>
             <p className="text-xs text-base-content/60">
-              Registro anterior sem evidências estruturadas.
+              Earlier record without structured evidence.
             </p>
             {event && <p className="whitespace-pre-wrap break-words">{event.note}</p>}
           </>
         )}
         {episode && (
           <div className="space-y-1">
-            <p className="text-xs font-medium">Episódio: {phaseLabel[episode.phase]}</p>
+            <p className="text-xs font-medium">Episode: {phaseLabel[episode.phase]}</p>
             {episode.window && (
               <>
                 <p className="text-xs text-base-content/60">
-                  Janela observada: {formatInstant(episode.window.startedAt, timezone)} até{' '}
+                  Observed window: {formatInstant(episode.window.startedAt, timezone)} to{' '}
                   {formatInstant(episode.window.endedAt, timezone)}
                 </p>
                 <p className="text-xs text-base-content/60">
-                  A janela da conversa não representa duração humana medida.
+                  The conversation window is not a measured human duration.
                 </p>
               </>
             )}
@@ -74,7 +74,7 @@ export function WorkEvidenceDetails({
         )}
         {event && (
           <p className="text-xs text-base-content/60">
-            Registrado por {event.source.agent} em {formatInstant(event.recordedAt, timezone)}.
+            Recorded by {event.source.agent} at {formatInstant(event.recordedAt, timezone)}.
           </p>
         )}
         {event?.references?.map((reference) => (
@@ -90,29 +90,29 @@ export function WorkEvidenceDetails({
           </a>
         ))}
         <details className="text-xs text-base-content/60">
-          <summary className="cursor-pointer">Identificadores do registro</summary>
+          <summary className="cursor-pointer">Record identifiers</summary>
           <dl className="space-y-2 mt-2 break-all">
             {event && (
               <div>
-                <dt className="font-medium">Evento</dt>
+                <dt className="font-medium">Event</dt>
                 <dd>{event.id}</dd>
               </div>
             )}
             {evidence.map((item) => (
               <div key={item.id}>
-                <dt className="font-medium">Evidência</dt>
+                <dt className="font-medium">Evidence</dt>
                 <dd>{item.id}</dd>
               </div>
             ))}
             {episode && (
               <div>
-                <dt className="font-medium">Episódio</dt>
+                <dt className="font-medium">Episode</dt>
                 <dd>{episode.id}</dd>
               </div>
             )}
             {event?.source.chatUrl && (
               <div>
-                <dt className="font-medium">Chat de origem</dt>
+                <dt className="font-medium">Source chat</dt>
                 <dd>{event.source.chatUrl}</dd>
               </div>
             )}

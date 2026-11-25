@@ -1,6 +1,6 @@
 {
   "name": "@natharuc/wid",
-  "version": "0.6.1",
+  "version": "0.6.2",
   "description": "What I did? Local work journal and MCP server for coding agents.",
   "type": "module",
   "bin": {

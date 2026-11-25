@@ -37,7 +37,7 @@ export function ActivityView({
         <div className="card-body gap-5 p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <h2 className="card-title text-base">
-              {page === 'day' ? 'Tarefas com registros no dia' : 'Tarefas registradas'}
+              {page === 'day' ? 'Tasks recorded on this day' : 'Recorded tasks'}
             </h2>
             <span className="badge badge-ghost badge-sm">{tasks.length}</span>
           </div>
@@ -45,19 +45,19 @@ export function ActivityView({
             <label className="input w-full">
               <Search size={16} />
               <input
-                placeholder="Buscar tarefa ou projeto"
-                aria-label="Buscar tarefas"
+                placeholder="Search tasks or projects"
+                aria-label="Search tasks"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
               />
             </label>
             <select
               className="select w-full sm:w-auto"
-              aria-label="Filtrar por status"
+              aria-label="Filter by status"
               value={status}
               onChange={(event) => setStatus(event.target.value)}
             >
-              <option value="all">Todos os estados</option>
+              <option value="all">All statuses</option>
               {Object.entries(statusLabel).map(([value, label]) => (
                 <option value={value} key={value}>
                   {label}
@@ -70,9 +70,9 @@ export function ActivityView({
               <table className="table">
                 <thead>
                   <tr>
-                    <th>Tarefa</th>
-                    <th>Estado</th>
-                    {page === 'day' && <th className="text-right">Horas</th>}
+                    <th>Task</th>
+                    <th>Status</th>
+                    {page === 'day' && <th className="text-right">Hours</th>}
                   </tr>
                 </thead>
                 {summarizeContexts(tasks).map((group) => (
@@ -101,14 +101,12 @@ export function ActivityView({
             <div className="flex flex-col items-center gap-3 py-12 text-center">
               <ListTodo size={28} className="text-base-content/40" />
               <h3 className="font-medium">
-                {query || status !== 'all'
-                  ? 'Nenhuma tarefa neste filtro'
-                  : 'Nenhuma atividade registrada'}
+                {query || status !== 'all' ? 'No tasks match this filter' : 'No activity recorded'}
               </h3>
               <p className="text-sm text-base-content/60">
                 {query || status !== 'all'
-                  ? 'Ajuste a busca ou o estado selecionado.'
-                  : 'Sem registros, o tempo trabalhado é desconhecido.'}
+                  ? 'Adjust the search or selected status.'
+                  : 'Work time is unknown without records.'}
               </p>
             </div>
           )}
@@ -119,7 +117,7 @@ export function ActivityView({
           <div className="card-body p-4 sm:p-6">
             <h2 className="card-title text-base mb-3">
               <History size={18} />
-              Histórico do dia
+              Daily history
             </h2>
             {events.length ? (
               <div className="space-y-3">
@@ -131,7 +129,7 @@ export function ActivityView({
                 })}
               </div>
             ) : (
-              <p className="text-sm text-base-content/60 py-5">Nenhum evento registrado.</p>
+              <p className="text-sm text-base-content/60 py-5">No events recorded.</p>
             )}
           </div>
         </aside>

@@ -78,7 +78,7 @@ export function createApp(options: {
   };
   const enabled = async (agent: string) => {
     if (!agentIds.includes(agent as AgentId) || !(await settings.read()).agents[agent as AgentId])
-      throw new WorkError('Agente desativado no WID.', 403);
+      throw new WorkError('Agent is disabled in WID.', 403);
   };
   app.all('/mcp/:agent', async (req, res) => {
     await enabled(String(req.params.agent));
@@ -152,7 +152,7 @@ export function createApp(options: {
     if (id === 'claude' && !input.enabled) await agents.installClaudeHook(false);
     res.json({
       agents: await agents.list(),
-      message: 'Abra uma nova sessão do agente para carregar a configuração.',
+      message: 'Open a new agent session to load the configuration.',
     });
   });
   // The stdio adapter uses the same application service and keeps a single database owner.
@@ -190,7 +190,7 @@ export function createApp(options: {
     res.json({ stopped: true });
     setTimeout(() => options.onShutdown?.(), 50);
   });
-  app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint não encontrado.' }));
+  app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint not found.' }));
   app.get(['/tasks', '/month', '/agents', '/settings', '/task/:id'], (_req, res) =>
     res.sendFile(resolve(options.webPath, 'index.html')),
   );
@@ -205,10 +205,12 @@ export function createApp(options: {
         });
       if (error instanceof WorkError)
         return res.status(error.status).json({ error: error.message });
-      if (error instanceof SyntaxError) return res.status(400).json({ error: 'JSON inválido.' });
+      if (error instanceof SyntaxError) return res.status(400).json({ error: 'Invalid JSON.' });
       // Never expose SQL, connection strings, local configuration contents or submitted data.
       console.error('WID operation failed:', error instanceof Error ? error.name : 'UnknownError');
-      res.status(500).json({ error: 'Falha local. Confira a configuração e tente novamente.' });
+      res
+        .status(500)
+        .json({ error: 'Local operation failed. Check the configuration and try again.' });
     },
   );
   return app;

@@ -15,14 +15,14 @@ const source = { agent: 'test', sessionId: 'evidence-session', chatUrl: 'thread:
 function fact(overrides: Partial<StructuredWork> = {}): StructuredWork {
   return {
     day: '2026-11-20',
-    summary: 'Revisou as regras de recebimento.',
+    summary: 'Reviewed the receipt rules.',
     outcome: 'advanced',
     actor: 'human',
     evidence: [
       {
         id: randomUUID(),
         kind: 'human_message',
-        summary: 'Usuário relata a revisão das regras.',
+        summary: 'The user reports reviewing the rules.',
         sourceId: 'message-1',
       },
     ],
@@ -37,8 +37,8 @@ async function fixture(t: TestContext) {
   const work = new WorkService(new SqlWorkStore(db), () => now);
   const { task } = await work.create(
     {
-      title: 'Revisar recebimentos',
-      context: 'Cliente / Pesquisa',
+      title: 'Review receipts',
+      context: 'Client / Research',
       occurredAt: '2026-11-19T10:00:00-03:00',
       idempotencyKey: randomUUID(),
     },
@@ -52,8 +52,8 @@ test('structured evidence persists original precision, source and episode withou
   const input = {
     taskId: task.id,
     kind: 'work_recorded',
-    note: 'Revisão explicitamente relatada pelo usuário.',
-    references: [{ label: 'Fonte da revisão', url: 'https://example.com/review' }],
+    note: 'Review explicitly reported by the user.',
+    references: [{ label: 'Review source', url: 'https://example.com/review' }],
     work: fact({
       episode: {
         id: 'episode-review',
@@ -74,7 +74,7 @@ test('structured evidence persists original precision, source and episode withou
   assert.equal(first.event.work?.evidence[0].occurredAt, undefined);
   assert.equal(first.event.work?.evidence[0].day, undefined);
   assert.equal(first.event.work?.evidence[0].sourceId, 'message-1');
-  await assert.rejects(work.record({ ...input, work: fact() }, source), /conteúdo diferente/);
+  await assert.rejects(work.record({ ...input, work: fact() }, source), /different content/);
 
   const snapshot = await work.snapshot();
   assert.equal(snapshot.events.filter((event) => event.taskId === task.id).length, 2);
@@ -99,38 +99,43 @@ test('structured evidence persists original precision, source and episode withou
 test('work_recorded preserves completed and cancelled lifecycle while task detail respects context', async (t) => {
   const { work, task } = await fixture(t);
   await work.record(
-    { taskId: task.id, kind: 'completed', note: 'Conclusão atual.', idempotencyKey: randomUUID() },
+    {
+      taskId: task.id,
+      kind: 'completed',
+      note: 'Current completion.',
+      idempotencyKey: randomUUID(),
+    },
     source,
   );
   const closed = await work.record(
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Fato anterior acrescentado.',
+      note: 'Earlier fact added.',
       work: fact(),
       idempotencyKey: randomUUID(),
     },
     source,
   );
   assert.equal(closed.task.status, 'completed');
-  const detail = await work.detail(task.id, timezone, 'cliente / pesquisa');
+  const detail = await work.detail(task.id, timezone, 'client / research');
   assert.equal(detail.task.status, 'completed');
   assert.ok(
     detail.digest.some(
       (day) => day.day === '2026-11-20' && day.items.some((item) => item.taskId === task.id),
     ),
   );
-  await assert.rejects(work.detail(task.id, timezone, 'Outro contexto'), /neste contexto/);
+  await assert.rejects(work.detail(task.id, timezone, 'Other context'), /this context/);
 
   const { task: cancelled } = await work.create(
-    { title: 'Cancelada', idempotencyKey: randomUUID() },
+    { title: 'Cancelled', idempotencyKey: randomUUID() },
     source,
   );
   await work.record(
     {
       taskId: cancelled.id,
       kind: 'cancelled',
-      note: 'Cancelada atualmente.',
+      note: 'Currently cancelled.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -141,7 +146,7 @@ test('work_recorded preserves completed and cancelled lifecycle while task detai
         {
           taskId: cancelled.id,
           kind: 'work_recorded',
-          note: 'Registro anterior.',
+          note: 'Earlier record.',
           work: fact(),
           idempotencyKey: randomUUID(),
         },
@@ -152,10 +157,10 @@ test('work_recorded preserves completed and cancelled lifecycle while task detai
   );
   await assert.rejects(
     work.record(
-      { taskId: task.id, kind: 'started', note: 'Não pode reabrir.', idempotencyKey: randomUUID() },
+      { taskId: task.id, kind: 'started', note: 'Cannot reopen.', idempotencyKey: randomUUID() },
       source,
     ),
-    /encerrada/,
+    /closed/,
   );
 });
 
@@ -169,13 +174,13 @@ test('structured work validation rejects unsupported authorship, fake durations 
     {
       ...base,
       actor: 'human',
-      evidence: [{ id: 'tool-only', kind: 'tool_result', summary: 'Teste automático passou.' }],
+      evidence: [{ id: 'tool-only', kind: 'tool_result', summary: 'Automated test passed.' }],
     },
     {
       ...base,
       actor: 'joint',
       evidence: [
-        { id: 'agent-only', kind: 'agent_message', summary: 'Agente declarou conclusão.' },
+        { id: 'agent-only', kind: 'agent_message', summary: 'Agent reported completion.' },
       ],
     },
     { ...base, minutes: 40 },
@@ -206,7 +211,7 @@ test('structured work validation rejects unsupported authorship, fake durations 
           {
             id: 'tool',
             kind: 'tool_result',
-            summary: 'Teste automático passou.',
+            summary: 'Automated test passed.',
             day: '2026-11-20',
           },
         ],
@@ -221,7 +226,7 @@ test('recording evidence rejects future claims and administrative payloads atomi
   const base = {
     taskId: task.id,
     kind: 'work_recorded',
-    note: 'Registro com evidência.',
+    note: 'Record with evidence.',
     work: fact(),
     idempotencyKey: randomUUID(),
   };
@@ -235,7 +240,7 @@ test('recording evidence rejects future claims and administrative payloads atomi
           {
             id: 'future',
             kind: 'human_message',
-            summary: 'Fato futuro.',
+            summary: 'Future fact.',
             occurredAt: '2026-11-26T10:00:00-03:00',
           },
         ],
@@ -245,7 +250,7 @@ test('recording evidence rejects future claims and administrative payloads atomi
       ...base,
       work: fact({
         evidence: [
-          { id: 'future-day', kind: 'human_message', summary: 'Fato futuro.', day: '2026-11-26' },
+          { id: 'future-day', kind: 'human_message', summary: 'Future fact.', day: '2026-11-26' },
         ],
       }),
     },
@@ -263,11 +268,11 @@ test('recording evidence rejects future claims and administrative payloads atomi
       ...base,
       effort: { category: 'human_estimated', day: '2026-11-20', minutes: 40, confidence: 'low' },
     },
-    { ...base, kind: 'context_changed', context: 'Outro' },
+    { ...base, kind: 'context_changed', context: 'Other' },
     {
       ...base,
       kind: 'references_added',
-      references: [{ label: 'Referência', url: 'https://example.com/ref' }],
+      references: [{ label: 'Reference', url: 'https://example.com/ref' }],
     },
     { ...base, kind: 'effort', effort: { category: 'agent_run', day: '2026-11-20', minutes: 40 } },
   ])
@@ -282,8 +287,8 @@ test('administrative changes and effort do not become work facts; legacy notes r
     {
       taskId: task.id,
       kind: 'context_changed',
-      context: 'Novo contexto',
-      note: 'Classificação administrativa.',
+      context: 'New context',
+      note: 'Administrative classification.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -293,7 +298,7 @@ test('administrative changes and effort do not become work facts; legacy notes r
       taskId: task.id,
       kind: 'references_added',
       references: [{ label: 'Ref', url: 'https://example.com/ref' }],
-      note: 'Referência administrativa.',
+      note: 'Administrative reference.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -303,7 +308,7 @@ test('administrative changes and effort do not become work facts; legacy notes r
       taskId: task.id,
       kind: 'effort',
       effort: { category: 'agent_run', day: '2026-11-25', minutes: 60 },
-      note: 'Execução automática.',
+      note: 'Automated execution.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -316,16 +321,16 @@ test('administrative changes and effort do not become work facts; legacy notes r
     {
       taskId: task.id,
       kind: 'progressed',
-      note: 'Identificou a divergência no recebimento.',
+      note: 'Identified the receipt discrepancy.',
       idempotencyKey: randomUUID(),
     },
     source,
   );
-  snapshot = await work.snapshot('novo contexto');
+  snapshot = await work.snapshot('new context');
   digest = makeWorkDigest(snapshot.tasks, snapshot.events, '2026-11-25', timezone);
   assert.equal(digest.items.length, 1);
   const result = digest.items[0];
-  assert.equal(result.context, 'Novo contexto');
+  assert.equal(result.context, 'New context');
   assert.equal(result.facts[0].eventId, legacy.event.id);
   assert.equal(result.facts[0].summary, legacy.event.note);
   assert.equal(result.facts[0].structured, false);
@@ -338,7 +343,7 @@ test('planned facts stay planned and explicit corrections replace facts without 
   const { work } = await fixture(t);
   const planned = await work.create(
     {
-      title: 'Planejar validação',
+      title: 'Plan validation',
       work: fact({ outcome: 'planned' }),
       idempotencyKey: randomUUID(),
     },
@@ -355,7 +360,7 @@ test('planned facts stay planned and explicit corrections replace facts without 
   await assert.rejects(
     work.create(
       {
-        title: 'Intenção falsa',
+        title: 'False intention',
         work: fact({ outcome: 'delivered' }),
         idempotencyKey: randomUUID(),
       },
@@ -366,8 +371,8 @@ test('planned facts stay planned and explicit corrections replace facts without 
     {
       taskId: planned.task.id,
       kind: 'work_recorded',
-      note: 'Primeiro fato.',
-      work: fact({ summary: 'Resultado registrado incorretamente.' }),
+      note: 'First fact.',
+      work: fact({ summary: 'Result recorded incorrectly.' }),
       idempotencyKey: randomUUID(),
     },
     source,
@@ -377,8 +382,8 @@ test('planned facts stay planned and explicit corrections replace facts without 
       taskId: planned.task.id,
       kind: 'corrected',
       correctsEventId: original.event.id,
-      note: 'Correção baseada em nova conferência.',
-      work: fact({ day: '2026-11-21', summary: 'Resultado corrigido e evidenciado.' }),
+      note: 'Correction based on another review.',
+      work: fact({ day: '2026-11-21', summary: 'Corrected result supported by evidence.' }),
       idempotencyKey: randomUUID(),
     },
     source,
@@ -407,7 +412,7 @@ test('historical and start notes without structured work do not infer progress f
     {
       taskId: task.id,
       kind: 'completed',
-      note: 'Concluída atualmente.',
+      note: 'Currently completed.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -416,7 +421,7 @@ test('historical and start notes without structured work do not infer progress f
     {
       taskId: task.id,
       kind: 'historical_note',
-      note: 'Fato retrospectivo sem classificação estruturada.',
+      note: 'Retrospective fact without structured classification.',
       occurredAt: '2026-11-20T10:00:00-03:00',
       idempotencyKey: randomUUID(),
     },
@@ -428,14 +433,14 @@ test('historical and start notes without structured work do not infer progress f
   assert.equal(digest.items[0].facts[0].outcome, 'recorded');
   assert.equal(digest.items[0].facts[0].actor, 'unknown');
   const { task: opened } = await work.create(
-    { title: 'Início sem resultado', idempotencyKey: randomUUID() },
+    { title: 'Start without a result', idempotencyKey: randomUUID() },
     source,
   );
   const started = await work.record(
     {
       taskId: opened.id,
       kind: 'started',
-      note: 'Início registrado sem resultado comprovado.',
+      note: 'Start recorded without a verified result.',
       idempotencyKey: randomUUID(),
     },
     source,
@@ -456,7 +461,7 @@ test('immutable evidence cannot be silently changed and effort-only corrections 
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Primeiro uso da observação.',
+      note: 'First use of the observation.',
       work: observation,
       idempotencyKey: randomUUID(),
     },
@@ -467,10 +472,10 @@ test('immutable evidence cannot be silently changed and effort-only corrections 
       {
         taskId: task.id,
         kind: 'work_recorded',
-        note: 'Tentativa de mudar a mesma observação.',
+        note: 'Attempt to change the same observation.',
         work: {
           ...observation,
-          evidence: [{ ...observation.evidence[0], summary: 'Outra declaração incompatível.' }],
+          evidence: [{ ...observation.evidence[0], summary: 'Another incompatible statement.' }],
         },
         idempotencyKey: randomUUID(),
       },
@@ -482,7 +487,7 @@ test('immutable evidence cannot be silently changed and effort-only corrections 
     {
       taskId: task.id,
       kind: 'progressed',
-      note: 'Validou o comportamento legado.',
+      note: 'Validated the legacy behavior.',
       effort: { day: '2026-11-22', category: 'human_estimated', minutes: 30, confidence: 'low' },
       idempotencyKey: randomUUID(),
     },
@@ -493,7 +498,7 @@ test('immutable evidence cannot be silently changed and effort-only corrections 
       taskId: task.id,
       kind: 'corrected',
       correctsEventId: legacy.event.id,
-      note: 'Corrigiu somente o tempo.',
+      note: 'Corrected only the time.',
       effort: { day: '2026-11-22', category: 'human_estimated', minutes: 15, confidence: 'low' },
       idempotencyKey: randomUUID(),
     },
@@ -512,8 +517,8 @@ test('episode revisions and equivalent statements consolidate while the audit tr
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Revisão inicial.',
-      work: fact({ summary: 'Revisão em andamento.', episode }),
+      note: 'Initial review.',
+      work: fact({ summary: 'Review in progress.', episode }),
       idempotencyKey: randomUUID(),
     },
     source,
@@ -522,8 +527,8 @@ test('episode revisions and equivalent statements consolidate while the audit tr
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Revisão final.',
-      work: fact({ summary: 'Revisão concluída.', outcome: 'delivered', episode }),
+      note: 'Final review.',
+      work: fact({ summary: 'Review completed.', outcome: 'delivered', episode }),
       idempotencyKey: randomUUID(),
     },
     source,
@@ -532,13 +537,13 @@ test('episode revisions and equivalent statements consolidate while the audit tr
   let digest = makeWorkDigest(snapshot.tasks, snapshot.events, '2026-11-20', timezone);
   assert.equal(digest.items[0].facts.length, 1);
   assert.equal(digest.items[0].facts[0].eventId, last.event.id);
-  const repeated = fact({ summary: 'Outra validação concluída.' });
+  const repeated = fact({ summary: 'Another validation completed.' });
   for (let index = 0; index < 2; index++)
     await work.record(
       {
         taskId: task.id,
         kind: 'work_recorded',
-        note: 'Mesma declaração em outro registro.',
+        note: 'Same statement in another record.',
         work: repeated,
         idempotencyKey: randomUUID(),
       },
@@ -549,8 +554,8 @@ test('episode revisions and equivalent statements consolidate while the audit tr
       {
         taskId: task.id,
         kind: 'work_recorded',
-        note: `Avanço ${index}.`,
-        work: fact({ summary: `Resultado distinto ${index}.` }),
+        note: `Progress ${index}.`,
+        work: fact({ summary: `Distinct result ${index}.` }),
         idempotencyKey: randomUUID(),
       },
       source,
@@ -565,17 +570,17 @@ test('episode revisions and equivalent statements consolidate while the audit tr
 test('administrative corrections remain audit-only instead of becoming accomplishments', async (t) => {
   const { work, task } = await fixture(t);
   for (const change of [
-    { kind: 'context_changed', context: 'Contexto corrigido' },
+    { kind: 'context_changed', context: 'Corrected context' },
     {
       kind: 'references_added',
-      references: [{ label: 'Referência', url: 'https://example.com/source' }],
+      references: [{ label: 'Reference', url: 'https://example.com/source' }],
     },
   ]) {
     const original = await work.record(
       {
         taskId: task.id,
         ...change,
-        note: 'Atualização administrativa.',
+        note: 'Administrative update.',
         idempotencyKey: randomUUID(),
       },
       source,
@@ -585,7 +590,7 @@ test('administrative corrections remain audit-only instead of becoming accomplis
         taskId: task.id,
         kind: 'corrected',
         correctsEventId: original.event.id,
-        note: 'Esclareceu somente a atualização administrativa.',
+        note: 'Clarified only the administrative update.',
         idempotencyKey: randomUUID(),
       },
       source,
@@ -605,7 +610,7 @@ test('correcting a structured fact requires replacement work and rejection prese
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Fato estruturado no dia original.',
+      note: 'Structured fact on the original day.',
       work: fact(),
       idempotencyKey: randomUUID(),
     },
@@ -616,7 +621,7 @@ test('correcting a structured fact requires replacement work and rejection prese
     taskId: task.id,
     kind: 'corrected',
     correctsEventId: original.event.id,
-    note: 'Tentativa de corrigir sem informar o fato substituto.',
+    note: 'Attempt to correct without providing the replacement fact.',
     idempotencyKey: randomUUID(),
   };
   await assert.rejects(work.record(correction, source), /work/);
@@ -630,8 +635,8 @@ test('correcting a structured fact requires replacement work and rejection prese
   const replacement = await work.record(
     {
       ...correction,
-      note: 'Correção do fato com evidência e dia explícitos.',
-      work: fact({ day: '2026-11-21', summary: 'Revisão confirmada no dia corrigido.' }),
+      note: 'Fact correction with explicit evidence and day.',
+      work: fact({ day: '2026-11-21', summary: 'Review confirmed on the corrected day.' }),
     },
     source,
   );
@@ -645,18 +650,18 @@ test('correcting a structured fact requires replacement work and rejection prese
   assert.deepEqual(makeWorkDigest(after.tasks, after.events, '2026-11-20', timezone).items, []);
   const correctedDay = makeWorkDigest(after.tasks, after.events, '2026-11-21', timezone);
   assert.equal(correctedDay.items[0].facts[0].eventId, replacement.event.id);
-  assert.equal(correctedDay.items[0].facts[0].summary, 'Revisão confirmada no dia corrigido.');
+  assert.equal(correctedDay.items[0].facts[0].summary, 'Review confirmed on the corrected day.');
 });
 
 test('concurrent agents cannot persist conflicting payloads for the same immutable evidence', async (t) => {
   const { work, task } = await fixture(t);
   const evidenceId = 'shared-human-observation';
-  const inputs = ['Revisão aprovada pelo usuário.', 'Revisão rejeitada pelo usuário.'].map(
+  const inputs = ['Review approved by the user.', 'Review rejected by the user.'].map(
     (summary, index) => ({
       input: {
         taskId: task.id,
         kind: 'work_recorded',
-        note: 'Agente registra a observação compartilhada.',
+        note: 'Agent records the shared observation.',
         work: fact({
           summary,
           evidence: [
@@ -704,14 +709,14 @@ test('day-only evidence can be reused at a new checkpoint after JSONB persistenc
   const observation = {
     id: 'day-only-observation',
     kind: 'human_message',
-    summary: 'Usuário relata a revisão.',
+    summary: 'The user reports the review.',
     day: '2026-11-20',
   } as const;
   const first = await work.record(
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Primeiro checkpoint.',
+      note: 'First checkpoint.',
       work: fact({ evidence: [observation] }),
       idempotencyKey: randomUUID(),
     },
@@ -724,9 +729,9 @@ test('day-only evidence can be reused at a new checkpoint after JSONB persistenc
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Novo checkpoint reutiliza a mesma observação.',
+      note: 'New checkpoint reuses the same observation.',
       work: fact({
-        summary: 'Confirmou o resultado da revisão.',
+        summary: 'Confirmed the review result.',
         evidence: [
           {
             day: observation.day,
@@ -748,7 +753,7 @@ test('day-only evidence can be reused at a new checkpoint after JSONB persistenc
       {
         taskId: task.id,
         kind: 'work_recorded',
-        note: 'Tentativa de alterar o dia da observação.',
+        note: 'Attempt to change the observation day.',
         work: fact({ evidence: [{ ...observation, day: '2026-11-21' }] }),
         idempotencyKey: randomUUID(),
       },
@@ -765,7 +770,7 @@ test('evidence with optional source and timestamp survives rereading but optiona
   const observation = {
     id: 'timestamped-observation',
     kind: 'human_message',
-    summary: 'Usuário relata a validação.',
+    summary: 'The user reports the validation.',
     sourceId: 'original-message-42',
     occurredAt: '2026-11-20T10:00:00-03:00',
   } as const;
@@ -773,7 +778,7 @@ test('evidence with optional source and timestamp survives rereading but optiona
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Primeiro checkpoint com fonte temporal.',
+      note: 'First checkpoint with a timestamped source.',
       work: fact({ evidence: [observation] }),
       idempotencyKey: randomUUID(),
     },
@@ -786,9 +791,9 @@ test('evidence with optional source and timestamp survives rereading but optiona
     {
       taskId: task.id,
       kind: 'work_recorded',
-      note: 'Segundo checkpoint mantém os opcionais e o conteúdo.',
+      note: 'Second checkpoint preserves the optional fields and content.',
       work: fact({
-        summary: 'Registrou a confirmação da validação.',
+        summary: 'Recorded the validation confirmation.',
         evidence: [
           {
             occurredAt: observation.occurredAt,
@@ -816,7 +821,7 @@ test('evidence with optional source and timestamp survives rereading but optiona
         {
           taskId: task.id,
           kind: 'work_recorded',
-          note: 'Tentativa de modificar um opcional.',
+          note: 'Attempt to modify an optional field.',
           work: fact({ evidence: [changed] }),
           idempotencyKey: randomUUID(),
         },

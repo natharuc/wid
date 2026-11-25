@@ -21,44 +21,44 @@ export function MonthView({
       <div className="flex flex-wrap items-center gap-3">
         <input
           className="input w-auto"
-          aria-label="Mês consultado"
+          aria-label="Selected month"
           type="month"
           value={month}
           onChange={(event) => event.target.value && setMonth(event.target.value)}
         />
-        <span className="badge badge-warning badge-soft">Cobertura parcial</span>
+        <span className="badge badge-warning badge-soft">Partial coverage</span>
         <a
           href={`/api/export${contextQuery(context)}`}
           download
           className="btn btn-outline btn-sm sm:ml-auto"
         >
           <Download size={16} />
-          Exportar
+          Export
         </a>
       </div>
       <div className="stats stats-vertical sm:stats-horizontal w-full border border-base-300 bg-base-100">
         <Metric
-          label="Horas humanas registradas"
+          label="Recorded human hours"
           value={hours(monthly.totals.humanMinutes)}
-          description={`${hours(monthly.totals.measuredMinutes)} medidas · ${hours(monthly.totals.estimatedMinutes)} estimadas`}
+          description={`${hours(monthly.totals.measuredMinutes)} measured · ${hours(monthly.totals.estimatedMinutes)} estimated`}
           accent
         />
         <Metric
-          label="Dias com registro"
+          label="Days with records"
           value={String(monthly.coveredDays)}
-          description={`${monthly.unknownDays} dias sem registros`}
+          description={`${monthly.unknownDays} days without records`}
         />
         <Metric
-          label="Dias sem tempo informado"
+          label="Days without time recorded"
           value={String(monthly.daysWithoutTime)}
-          description="Há atividade, mas sem duração"
+          description="Activity recorded without a duration"
         />
       </div>
       <section className="card bg-base-100 border border-base-300">
         <div className="card-body p-4 sm:p-6 gap-5">
-          <h2 className="card-title text-base">Dedicação por dia</h2>
+          <h2 className="card-title text-base">Work time by day</h2>
           <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center">
-            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((label) => (
+            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
               <div key={label} className="py-2 text-xs font-medium text-base-content/60">
                 {label}
               </div>
@@ -70,7 +70,7 @@ export function MonthView({
               <button
                 key={item.day}
                 onClick={() => chooseDay(item.day)}
-                aria-label={`${Number(item.day.slice(8))}, ${item.humanMinutes ? hours(item.humanMinutes) : item.events ? 'tempo não informado' : 'sem registro'}`}
+                aria-label={`${Number(item.day.slice(8))}, ${item.humanMinutes ? hours(item.humanMinutes) : item.events ? 'time unknown' : 'no records'}`}
                 className={`btn h-auto min-h-20 flex-col gap-1 px-1 py-3 sm:min-h-24 sm:gap-2 ${item.events ? 'btn-soft btn-primary' : 'btn-ghost border-base-300'}`}
               >
                 <span className="text-xs">{Number(item.day.slice(8))}</span>
@@ -85,14 +85,14 @@ export function MonthView({
                 </span>
                 {item.events > 0 && (
                   <span className="hidden sm:block text-xs font-normal">
-                    {item.tasks} tarefa{item.tasks > 1 ? 's' : ''}
+                    {item.tasks} task{item.tasks > 1 ? 's' : ''}
                   </span>
                 )}
               </button>
             ))}
           </div>
           <p className="text-xs text-base-content/60">
-            — Sem tempo registrado. Clique em um dia para consultar as tarefas.
+            — No time recorded. Select a day to view its tasks.
           </p>
         </div>
       </section>
@@ -104,9 +104,9 @@ export function MonthView({
       <div className="alert alert-info alert-soft">
         <Info size={20} />
         <p className="text-sm">
-          O total inclui estimativas. Execução dos agentes ({hours(monthly.totals.agentMinutes)}) e
-          espera ({hours(monthly.totals.waitMinutes)}) ficam fora das horas humanas. Dias sem
-          registro têm cobertura desconhecida.
+          The total includes estimates. Agent runtime ({hours(monthly.totals.agentMinutes)}) and
+          waiting ({hours(monthly.totals.waitMinutes)}) are excluded from human work time. Days
+          without records have unknown coverage.
         </p>
       </div>
     </>

@@ -3,15 +3,15 @@
   <img src="brand/01-logo/svg/wid-logo-grafite.svg" alt="WID" width="280">
 </picture>
 
-**What I did?** Registro local de tarefas e dedicação humana, com painel web e MCP para agentes.
+**What I did?** A local journal of tasks and human work time, with a web dashboard and MCP for agents.
 
-O WID responde **o que fiz em cada dia, quanto tempo dediquei a cada tarefa e quantas horas tenho registradas no mês**. Intenções, avanços, decisões, bloqueios e entregas ficam persistidos com sua origem. Estimativas continuam identificadas como estimativas.
+WID answers **what I did each day, how much time I spent on each task, and how many hours I have recorded this month**. Intentions, progress, decisions, blockers, and deliveries persist with their sources. Estimates remain explicitly labeled as estimates.
 
-## Rodar localmente
+## Run locally
 
-Node.js **22.13+**. Não precisa de Docker nem de instalar um servidor de banco: o padrão é PostgreSQL embutido com [PGlite](https://pglite.dev/), persistido em disco.
+Node.js **22.13+** is required. Docker and a separate database server are unnecessary: the default is embedded PostgreSQL through [PGlite](https://pglite.dev/), persisted on disk.
 
-Instale o pacote compilado da release:
+Install the compiled release package:
 
 ```sh
 npm install -g https://github.com/natharuc/wid/releases/latest/download/wid.tgz
@@ -19,22 +19,22 @@ wid setup
 wid start --background
 ```
 
-Abra **http://127.0.0.1:4318**. Ative os agentes pela página **Agentes** ou pela CLI:
+Open **http://127.0.0.1:4318**. Enable agents on the **Agents** page or through the CLI:
 
 ```sh
 wid agent codex
-# opcionais, se você usa esses agentes:
+# Optional, if you use these agents:
 wid agent claude
 wid agent cursor
 ```
 
-Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
+Open a **new agent session** to load MCP and its instructions. `npm install` does not modify global configuration; `wid setup` only detects clients. Activation is explicit and reversible.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.6.1 está distribuída pelo GitHub; não está publicada no registro npm.
+The npm name `wid` already belongs to another project. This package is named **`@natharuc/wid`**, with the **`wid`** executable. Version 0.6.2 is distributed through GitHub; it is not published to the npm registry.
 
-### Atualizar a instalação
+### Update the installation
 
-A instalação por tarball não acompanha automaticamente as próximas releases com `npm update`. Para buscar a última versão publicada:
+An installation from a tarball does not automatically track later releases with `npm update`. To install the latest published version:
 
 ```sh
 wid stop
@@ -43,9 +43,9 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.6.1, use `https://github.com/natharuc/wid/releases/download/v0.6.1/wid.tgz`.
+Tasks, settings, and history live in the data directory, separate from the package. Updating at the same installation path preserves agent configuration. To pin release 0.6.2, use `https://github.com/natharuc/wid/releases/download/v0.6.2/wid.tgz`.
 
-Também é possível instalar da fonte, com build local automático:
+You can also install from source, with an automatic local build:
 
 ```sh
 npm install -g github:natharuc/wid
@@ -53,46 +53,45 @@ npm install -g github:natharuc/wid
 
 ## MVP
 
-- Resumo rápido de resultados, avanços e bloqueios, com autoria e evidências abríveis. Planejamento e notas legadas neutras aparecem separadamente.
-- Registro do trabalho pelos agentes: a interface de acompanhamento não contém formulários de criação/atualização de tarefas.
-- Evidências estruturadas e episódios observados, sem transformar mensagens ou janelas de conversa em minutos humanos.
+- A quick summary of outcomes, progress, and blockers, with attribution and expandable evidence. Plans and neutral legacy notes appear separately.
+- Agents record the work; the tracking dashboard has no task creation or update forms.
+- Structured evidence and observed episodes, without turning messages or conversation windows into human minutes.
+- Tasks with optional company, project, and references to chats, issues, tasks, and PRs.
+- Dynamic contexts chosen by the agent: free-form names, filtered groups and reports, and audited reclassification.
+- Persistent history: intention, start, progress, decision, blocker, completion, and cancellation.
+- Time per **task/day**, estimated by the agent with evidence and confidence or reported by the user.
+- A daily view, timeline, and monthly calendar with explicit coverage.
+- A React interface with DaisyUI components, the corporate (light) / business (dark) themes, and Tailwind layout utilities; no custom CSS. The sun/moon toggle in the header saves the choice in the browser. The first visit follows the system theme, which is applied before the interface renders.
+- Local MCP over **stdio** and **Streamable HTTP**, using the official SDK.
+- Detection and activation/deactivation for Codex, Claude Code, Cursor, GitHub Copilot, Gemini CLI, and OpenCode 2.
+- Managed global instructions for Codex and Claude Code; MCP instructions for every client.
+- An optional Claude Code `SessionStart` hook as a recording reminder.
+- JSON export with sources, original timestamps, and correction history.
+- External system URLs belong to tasks and evidence events. This version has no global tool configuration, synchronization, or external credentials.
 
-- Tarefas com empresa, projeto e referências opcionais a chats, issues, Tasks e PRs.
-- Contextos dinâmicos escolhidos pelo agente: texto livre, grupos e relatórios filtrados, com reclassificação auditável.
-- Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
-- Tempo por **tarefa/dia**, estimado pelo agente com evidência e confiança ou informado pelo usuário.
-- Visão diária, linha do tempo e calendário mensal com cobertura explícita.
-- Interface React com componentes DaisyUI, temas corporate (claro) / business (escuro) e layout Tailwind; sem CSS próprio. O seletor de sol/lua no cabeçalho salva a escolha no navegador; na primeira abertura, segue o sistema. O tema é aplicado antes da renderização da interface.
-- MCP local por **stdio** e **Streamable HTTP**, usando o SDK oficial.
-- Detecção e ativação/desativação de Codex, Claude Code, Cursor, GitHub Copilot, Gemini CLI e OpenCode 2.
-- Instruções globais gerenciadas para Codex e Claude Code; instruções no MCP para todos.
-- Hook opcional `SessionStart` no Claude Code, como lembrete de registro.
-- Exportação JSON com fontes, horários originais e histórico de correções.
-- URLs de sistemas externos pertencem às tarefas e aos eventos de evidência. Sem configuração global de ferramenta, sincronização ou credenciais externas nesta versão.
+## Work summaries and evidence
 
-## Resumo e evidências do trabalho
+The dashboard opens with the daily summary. Each task shows up to three recent facts, with outcome, attribution, and sources. The first five tasks appear immediately; the rest can be expanded. Full history, agent execution, and waiting time are secondary. Task details begin with the latest factual summary.
 
-A abertura prioriza o resumo do dia. Cada tarefa mostra até três fatos recentes, com resultado, autoria e fontes. As primeiras cinco tarefas aparecem de imediato e as demais podem ser expandidas. Histórico completo, execução de agentes e espera ficam em uma seção secundária. O detalhe da tarefa começa pelo resumo factual mais recente.
+The agent writes the summary through `work` in `wid_record_event`. For a neutral fact that does not change the task's current state, use `kind: "work_recorded"`. It also works on completed or cancelled tasks and when only the original day is known. Actual lifecycle events can include the same block. On creation, `work` is optional and its outcome must be `planned`.
 
-O agente escreve a síntese usando `work` em `wid_record_event`. Para um fato neutro que não altera o estado atual da tarefa, use `kind: "work_recorded"`; também funciona em tarefas concluídas ou canceladas e quando somente o dia original é conhecido. Eventos reais de ciclo de vida podem incluir o mesmo bloco. Na criação, `work` é opcional e seu resultado deve ser `planned`.
-
-Exemplo de contrato, com identificador de tarefa a substituir e conteúdo ilustrativo:
+Contract example with a task ID placeholder and illustrative content:
 
 ```json
 {
-  "taskId": "UUID da tarefa existente",
+  "taskId": "existing task UUID",
   "kind": "work_recorded",
-  "note": "Revisão relatada pelo usuário; duração desconhecida.",
+  "note": "Review reported by the user; duration unknown.",
   "work": {
     "day": "2026-11-25",
-    "summary": "Revisou as regras de recebimento e definiu o ajuste necessário.",
+    "summary": "Reviewed the receipt rules and identified the required adjustment.",
     "outcome": "advanced",
     "actor": "human",
     "evidence": [
       {
         "id": "conversation-123:review-receipts:observation-1",
         "kind": "user_report",
-        "summary": "Usuário relatou a revisão e indicou a regra a corrigir."
+        "summary": "The user reported the review and identified the rule to correct."
       }
     ],
     "episode": { "id": "conversation-123:review-receipts", "phase": "review" }
@@ -101,160 +100,160 @@ Exemplo de contrato, com identificador de tarefa a substituir e conteúdo ilustr
 }
 ```
 
-Campos de `work`:
+`work` fields:
 
-- `day`: dia local factual, não a data da gravação; não exige inventar uma hora. Se `occurredAt` do evento for enviado explicitamente, ele deve corresponder a esse dia no fuso configurado.
-- `summary`: frase factual de até 280 caracteres, apoiada nas evidências. Não substitui a nota detalhada.
-- `outcome`: `planned`, `advanced`, `delivered`, `blocked` ou `cancelled`. Eventos `completed`, `blocked` e `cancelled` exigem resultado correspondente.
-- `actor`: `human`, `agent`, `joint` ou `unknown`. Autoria humana/conjunta exige evidência do tipo `human_message` ou `user_report`; um resultado de comando sozinho não comprova participação humana.
-- `evidence`: de 1 a 20 observações com `id` estável, `kind` (`human_message`, `agent_message`, `tool_result`, `user_report`) e `summary` curta. São relatos estruturados do agente, não certificação independente. `sourceId` só deve ser enviado quando o identificador original é conhecido. Cada observação pode informar `occurredAt` com offset, apenas `day`, ou nenhum horário quando desconhecido; nunca ambos.
-- `episode`: identificação estável e `phase` (`definition`, `review`, `decision`, `validation`, `execution`, `other`). A janela opcional `window: {startedAt, endedAt}` descreve somente horários observados da conversa. **Não é duração humana medida e não gera horas.**
+- `day`: the factual local day, rather than the recording date; no invented time is required. If the event's `occurredAt` is explicitly supplied, it must match this day in the configured time zone.
+- `summary`: a factual statement of up to 280 characters, supported by evidence. It does not replace the detailed note.
+- `outcome`: `planned`, `advanced`, `delivered`, `blocked`, or `cancelled`. The `completed`, `blocked`, and `cancelled` events require a matching outcome.
+- `actor`: `human`, `agent`, `joint`, or `unknown`. Human or joint attribution requires `human_message` or `user_report` evidence; a command result alone does not prove human participation.
+- `evidence`: 1 to 20 observations with a stable `id`, a `kind` (`human_message`, `agent_message`, `tool_result`, `user_report`), and a short `summary`. These are structured reports from the agent, not independent certification. Supply `sourceId` only when the original identifier is known. An observation may include `occurredAt` with an offset, only `day`, or neither when its original time is unknown; never both.
+- `episode`: a stable identifier and a `phase` (`definition`, `review`, `decision`, `validation`, `execution`, `other`). The optional `window: {startedAt, endedAt}` describes observed conversation times only. **It is not measured human duration and does not generate hours.**
 
-O mesmo `episode.id` na mesma tarefa/dia revisa o resumo inteiro daquele episódio: envie uma síntese completa, não apenas um fragmento. Fatos independentes usam episódios diferentes. Sem episódio, afirmações equivalentes são consolidadas no resumo; todos os eventos permanecem na auditoria. Um `evidence.id` já usado na tarefa não pode receber conteúdo diferente, inclusive entre agentes: registre uma nova observação e preserve o original. O estado e as referências atuais da tarefa não são alterados por `work_recorded`; links informados nesse evento pertencem ao fato.
+The same `episode.id` on the same task/day revises that episode's entire summary: send a complete snapshot rather than a fragment. Independent facts use different episodes. Without an episode, equivalent statements are consolidated in the summary; all events remain in the audit history. An `evidence.id` already used on a task cannot receive different content, including across agents: record a new observation and preserve the original. `work_recorded` does not change the task's current state or references; links supplied on this event belong to the fact.
 
-Para corrigir um fato estruturado, use `kind: "corrected"`, `correctsEventId` e o bloco `work` de substituição com dia/evidências corretos. Uma nota sem `work` não substitui silenciosamente estrutura ou dia. Correções exclusivamente de esforço preservam o fato. Correções de auditoria administrativa não viram realizações. Registros antigos sem `work` continuam acessíveis com texto fiel ao evento, identificados como legados e autoria não informada; não recebem evidências inventadas. Notas históricas legadas neutras não são classificadas como avanços só porque a tarefa está concluída atualmente.
+To correct a structured fact, use `kind: "corrected"`, `correctsEventId`, and a replacement `work` block with the correct day and evidence. A note without `work` does not silently replace the structure or day. Effort-only corrections preserve the fact. Administrative audit corrections do not become accomplishments. Older records without `work` remain accessible with text faithful to the original event, labeled as legacy with unknown attribution; no evidence is invented for them. Neutral legacy historical notes are not classified as progress merely because the task is currently completed.
 
-`wid_report_day` e `GET /api/day/:day` acrescentam `digest`; `GET /api/tasks/:id` inclui os resumos por dia. As consultas continuam filtradas por contexto. Eventos administrativos/estimativas não alimentam realizações do resumo. A estimativa existente permanece separada: nenhum bloco `work` aceita `effort`, e `wid_estimate_day` não ganha um estimador automático nesta versão. A síntese vem do agente conectado, sem novo provedor ou chave de IA no serviço local.
+`wid_report_day` and `GET /api/day/:day` add `digest`; `GET /api/tasks/:id` includes summaries by day. Queries remain filtered by context. Administrative events and estimates do not become accomplishments in the summary. Existing time estimation remains separate: no `work` block accepts `effort`, and `wid_estimate_day` does not gain an automatic estimator in this version. The connected agent provides the summary, without requiring another AI provider or key in the local service.
 
-## Como as horas são calculadas
+## How hours are calculated
 
-Cada registro de tempo é um **total acumulado da tarefa naquele dia e categoria**. Atualizar uma estimativa de 40 para 60 minutos resulta em **60**, não 100. Uma nova revisão tem outra chave idempotente; reenviar o mesmo comando usa a mesma chave e não duplica o registro.
+Each time record is a **cumulative total for that task, day, and category**. Updating an estimate from 40 to 60 minutes results in **60**, not 100. A new revision has a different idempotency key; resending the same command uses the same key and does not duplicate the record.
 
-Categorias:
+Categories:
 
-| Categoria | Significado |
+| Category | Meaning |
 | --- | --- |
-| `human_estimated` | Total humano estimado para a tarefa/dia; requer justificativa e confiança. |
-| `human_measured` | Total humano medido ou explicitamente informado pelo usuário para a tarefa/dia. |
-| `agent_run` | Total de execução do agente; fora das horas humanas. |
-| `wait` | Total de espera ou jobs; fora das horas humanas. |
+| `human_estimated` | Estimated human total for the task/day; requires a basis and confidence. |
+| `human_measured` | Measured human total or a total explicitly reported by the user for the task/day. |
+| `agent_run` | Total agent execution time; excluded from human hours. |
+| `wait` | Total waiting or job time; excluded from human hours. |
 
-Para cada tarefa/dia, o total humano é o **maior entre o medido e o estimado**. A parcela estimada do relatório é a diferença positiva entre estimativa total e medição. Exemplo: estimativa de 90 min com 30 min medidos → 90 min humanos, sendo 30 medidos + 60 estimados. Se você tem apenas uma parte adicional estimada, informe na estimativa o total, incluindo o já medido.
+For each task/day, the human total is the **greater of measured and estimated time**. The estimated portion of the report is the positive difference between the total estimate and the measurement. Example: a 90-minute estimate with 30 measured minutes yields 90 human minutes: 30 measured + 60 estimated. If only an additional portion is estimated, submit the entire total as the estimate, including what was already measured.
 
-O agente deve ler o relatório do dia antes de revisar uma estimativa, considerar outras sessões e informar a base da estimativa e a confiança. Tempo decorrido entre mensagens, inatividade, execução delegada e espera não equivalem a trabalho humano. Se a conversa não fornece evidência suficiente, o tempo continua desconhecido.
+The agent should read the daily report before revising an estimate, account for other sessions, and provide the estimation basis and confidence. Elapsed time between messages, inactivity, delegated execution, and waiting do not equal human work. When the conversation provides insufficient evidence, time remains unknown.
 
-O mês soma os totais diários por tarefa. **É um total registrado com cobertura parcial**, não uma declaração de jornada completa. Dias sem evidência não significam ausência de trabalho. O WID alerta sobre dias acima de 24h; sobreposição entre tarefas precisa ser revisada mesmo abaixo desse limite. O MVP não contém cronômetro nem detector de presença.
+The month sums daily totals by task. **This is recorded time with partial coverage**, not a declaration of a complete working schedule. Days without evidence do not mean no work occurred. WID warns about days above 24 hours; overlaps between tasks still need review below that limit. The MVP has no timer or presence detector.
 
 ```sh
 wid report 2026-11
 ```
 
-## Contextos dinâmicos
+## Dynamic contexts
 
-O seletor no cabeçalho define o contexto de trabalho para toda a navegação. Tarefas, contadores, histórico, horas diárias/mensais, páginas de detalhe e exportações seguem a seleção. A escolha fica na URL e é lembrada no navegador; links internos preservam o escopo, inclusive em outra aba. `Todos os contextos` é uma opção explícita. Um contexto sem tarefas continua vazio, sem ampliar silenciosamente a consulta. Ao trocar de contexto numa página de tarefa, o painel abre a lista do novo grupo. A página de detalhe também verifica o contexto na API e não retorna dados de outro grupo.
+The header selector sets the work context for all navigation. Tasks, counts, history, daily/monthly hours, detail pages, and exports follow the selection. The choice is stored in the URL and remembered by the browser; internal links preserve scope, including in another tab. `All contexts` is an explicit option. A context without tasks stays empty, without silently broadening the query. Changing context on a task page opens the new group's task list. The detail API also checks the context and does not return data from another group.
 
-Fuso horário e ativação de agentes continuam gerais. GitHub, Azure DevOps, Slack e outras ferramentas são referências por tarefa; não há configuração global de ferramenta. O contexto escolhido no painel filtra a visualização; cada agente continua escolhendo e enviando o contexto da tarefa pelo MCP.
+Time zone and agent activation remain global. GitHub, Azure DevOps, Slack, and other tools are references on individual tasks; there is no global tool configuration. The dashboard context filters the view; each agent still chooses and sends its task's context through MCP.
 
-O agente decide o contexto de cada tarefa, separado de empresa e projeto. **Não existe uma lista fechada nem um cadastro obrigatório.** `MAG`, `POLLARIS`, `SEDUCAO` e `OUTROS` são exemplos; `Pesquisa / Cliente Á` ou qualquer outro nome também é válido.
+The agent decides each task's context, separately from company and project. **There is no fixed catalog or mandatory registry.** `MAG`, `POLLARIS`, `SEDUCAO`, and `OUTROS` are examples; `Research / Client A` or any other name is also valid.
 
-Antes de criar uma tarefa, o agente consulta `wid_list_contexts` para reaproveitar um nome quando fizer sentido e envia `context` explicitamente em `wid_create_task`. Um nome novo cria o grupo a partir desse registro. O painel monta a lista de grupos dinamicamente, agrupa as tarefas e permite filtrar atividades, horas diárias e mensais. A comparação ignora caixa, acentos e espaços repetidos; o nome legível é preservado.
+Before creating a task, the agent consults `wid_list_contexts` to reuse a name when appropriate and explicitly sends `context` in `wid_create_task`. A new name creates the group through that record. The dashboard builds its group list dynamically, groups tasks, and filters activity and daily/monthly hours. Comparison ignores case, accents, and repeated spaces; the readable name is preserved.
 
 ```json
 {
-  "title": "Revisar o fluxo de autenticação",
-  "context": "Pesquisa / Cliente Á",
+  "title": "Review the authentication flow",
+  "context": "Research / Client A",
   "project": "Portal",
   "idempotencyKey": "session-123:auth-intention"
 }
 ```
 
-Tarefas antigas sem contexto aparecem em `OUTROS`. O agente pode classificá-las ou corrigir um grupo sem duplicar a tarefa:
+Legacy tasks without a context appear under `OUTROS`. The agent can classify them or correct a group without duplicating the task:
 
 ```json
 {
-  "taskId": "UUID da tarefa existente",
+  "taskId": "existing task UUID",
   "kind": "context_changed",
-  "context": "Pesquisa / Cliente Á",
-  "note": "Classificação definida para este trabalho.",
+  "context": "Research / Client A",
+  "note": "Classification established for this work.",
   "idempotencyKey": "session-123:classify-auth"
 }
 ```
 
-Essa alteração é registrada no histórico, com contexto anterior e novo. **Todo o histórico e as horas da tarefa passam a ser agrupados pelo contexto atual.** Para consultas de um grupo, envie `context` em `wid_list_tasks`, `wid_report_day` e `wid_report_month`; omita para consultar todos. O MCP e as instruções globais deixam essa escolha explícita. A API continua aceitando clientes antigos sem o campo, usando `OUTROS`; isso é compatibilidade, não uma restrição de catálogo.
+This change is recorded in the history with the previous and new contexts. **The task's entire history and time are grouped under its current context.** For a group's queries, send `context` to `wid_list_tasks`, `wid_report_day`, and `wid_report_month`; omit it for the overall view. MCP and global instructions make this choice explicit. The API still accepts older clients without the field, using `OUTROS`; this is compatibility behavior, not a catalog restriction.
 
 ## MCP
 
-### Acompanhar uma tarefa
+### Follow a task
 
-O título de uma tarefa abre `/task/{id}`: intenção, estado, histórico completo, horas por dia e referências para os sistemas de origem. A URL pode ser aberta diretamente e recarregada. O painel é voltado ao acompanhamento; o agente registra o trabalho pelo MCP.
+A task title opens `/task/{id}`: intention, state, full history, hours by day, and references to the original systems. The URL supports direct navigation and reloads. The dashboard is for tracking; the agent records work through MCP.
 
-O campo `references` já existe na criação. Use links reais, quando conhecidos:
+The `references` field is available on creation. Use real links when known:
 
 ```json
 {
-  "title": "Revisar recebimentos",
-  "context": "Cliente A",
-  "note": "Validar o comportamento solicitado e registrar os resultados.",
+  "title": "Review receipts",
+  "context": "Client A",
+  "note": "Validate the requested behavior and record the results.",
   "references": [
-    { "label": "Issue de recebimentos", "url": "https://github.com/organizacao/projeto/issues/123" }
+    { "label": "Receipts issue", "url": "https://github.com/organizacao/projeto/issues/123" }
   ],
-  "idempotencyKey": "session-123:recebimentos"
+  "idempotencyKey": "session-123:receipts"
 }
 ```
 
-Para adicionar links posteriormente, `wid_record_event` aceita `kind: "references_added"`, `taskId`, `references: [{label, url}]`, `note` e `idempotencyKey`. A alteração é auditada e não duplica a tarefa. URLs repetidas são consolidadas e a tarefa aceita até 20 referências. O painel identifica links do Azure DevOps, GitHub e Slack; outros destinos usam o rótulo da referência. WID não consulta esses serviços nem envia mensagens ao abri-los.
+To add links later, `wid_record_event` accepts `kind: "references_added"`, `taskId`, `references: [{label, url}]`, `note`, and `idempotencyKey`. The change is audited and does not duplicate the task. Repeated URLs are consolidated, and a task accepts up to 20 references. The dashboard recognizes Azure DevOps, GitHub, and Slack links; other destinations use the reference label. WID does not query these services or send messages when opening their links.
 
-| Ferramenta | Uso |
+| Tool | Use |
 | --- | --- |
-| `wid_list_tasks` | Buscar/reutilizar tarefas e consultar o histórico. |
-| `wid_list_contexts` | Consultar nomes dinâmicos de contextos e quantidade de tarefas para reutilizar ou criar outro nome. |
-| `wid_create_task` | Registrar a intenção de trabalho. |
-| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo, correção, `context_changed`, `references_added` ou `historical_note`. |
-| `wid_estimate_day` | Revisar o total humano estimado de uma tarefa/dia com justificativa e confiança. |
-| `wid_report_day` | Consultar horas por tarefa e a cobertura do dia. |
-| `wid_report_month` | Consultar o total mensal, parcelas medidas/estimadas e lacunas. |
+| `wid_list_tasks` | Find/reuse tasks and inspect their history. |
+| `wid_list_contexts` | List dynamic context names and task counts to reuse a name or choose another. |
+| `wid_create_task` | Record the intention to work. |
+| `wid_record_event` | Record progress, decisions, blockers, delivery, time, corrections, `context_changed`, `references_added`, or `historical_note`. |
+| `wid_estimate_day` | Revise a task/day's estimated human total, with a basis and confidence. |
+| `wid_report_day` | Query hours by task and daily coverage. |
+| `wid_report_month` | Query the monthly total, measured/estimated portions, and gaps. |
 
-Exemplo de `wid_estimate_day`:
+`wid_estimate_day` example:
 
 ```json
 {
-  "taskId": "UUID retornado por wid_create_task",
+  "taskId": "UUID returned by wid_create_task",
   "day": "2026-11-25",
   "minutes": 45,
-  "basis": "Discussão e revisão ativa do fluxo. Tempo do build excluído; início sem medição precisa.",
+  "basis": "Active discussion and review of the flow. Build time excluded; no precise measurement of the start.",
   "confidence": "low",
   "idempotencyKey": "session-123:task-456:2026-11-25:estimate-v1",
   "sessionId": "session-123"
 }
 ```
 
-O stdio inicia o servidor local em background quando necessário; só esse servidor abre o banco embutido. Outros clientes podem usar `http://127.0.0.1:4318/mcp/{agente}` com o respectivo agente ativado: `codex`, `claude`, `cursor`, `copilot`, `gemini` ou `opencode`. O serviço não escuta na rede externa.
+The stdio transport starts the local server in the background when needed; only that server opens the embedded database. Other clients can use `http://127.0.0.1:4318/mcp/{agent}` with the corresponding agent enabled: `codex`, `claude`, `cursor`, `copilot`, `gemini`, or `opencode`. The service does not listen on the external network.
 
-O MCP fornece instruções de uso, mas **o agente precisa segui-las**. A versão inicial não intercepta todas as conversas nem garante registro por todos os clientes. O hook do Claude é um lembrete, não um coletor de transcrições nem um medidor de tempo. Clientes em nuvem não acessam este localhost.
+MCP provides usage instructions, but **the agent must follow them**. The initial version does not intercept every conversation or guarantee recording by every client. The Claude hook is a reminder rather than a transcript collector or time meter. Cloud clients cannot reach this localhost.
 
-## Anotações históricas
+## Historical notes
 
-Para acrescentar um fato antigo a uma tarefa existente sem alterar seu estado atual, use `wid_record_event` com `kind: "historical_note"`. Funciona em tarefas planejadas, em andamento, bloqueadas, concluídas ou canceladas. `occurredAt` é obrigatório, com horário original e offset explícito; `recordedAt` continua sendo o momento real da gravação. A anotação aparece no histórico e na cobertura diária/mensal pela data original, mesmo quando os registros são enviados fora de ordem.
+To add an older fact to an existing task without changing its current state, use `wid_record_event` with `kind: "historical_note"`. It works on planned, active, blocked, completed, and cancelled tasks. `occurredAt` is required with the original timestamp and an explicit offset; `recordedAt` remains the actual recording time. The note appears in history and daily/monthly coverage on its original date, even when records arrive out of order.
 
 ```json
 {
-  "taskId": "UUID da tarefa existente",
+  "taskId": "existing task UUID",
   "kind": "historical_note",
-  "note": "Validação realizada no período, conforme a referência registrada. Duração humana desconhecida.",
+  "note": "Validation performed during the period, according to the recorded reference. Human duration unknown.",
   "occurredAt": "2026-11-03T10:00:00-03:00",
-  "references": [{"label": "Fonte do registro", "url": "https://example.com/evidence"}],
+  "references": [{"label": "Record source", "url": "https://example.com/evidence"}],
   "idempotencyKey": "history:task-id:2026-11-03:validation"
 }
 ```
 
-Não envie `effort`, `context` ou `correctsEventId` nessa anotação. O contexto é o da tarefa; referências históricas pertencem ao evento e não substituem os links atuais da tarefa. Tempo, quando houver evidência, usa os registros de esforço separados. Sem evidência de duração, o tempo permanece desconhecido. Uma chave idempotente repetida com o mesmo conteúdo retorna o mesmo evento; conteúdo diferente na mesma chave é recusado. Eventos comuns de ciclo de vida continuam sendo processados na ordem de gravação e não fazem replay por `occurredAt`.
+Do not send `effort`, `context`, or `correctsEventId` on this note. It uses the task's context; historical references belong to the event and do not replace the task's current links. Time, when supported by evidence, uses separate effort records. Without duration evidence, time remains unknown. Repeating an idempotency key with identical content returns the same event; different content under the same key is rejected. Ordinary lifecycle events continue to use recording order and do not replay state through `occurredAt`.
 
-## Configuração de agentes
+## Agent configuration
 
-O WID altera somente sua própria entrada e blocos marcados. Uma entrada `wid` de outra instalação gera conflito em vez de sobrescrita.
+WID modifies only its own entry and marked blocks. A `wid` entry from another installation produces a conflict instead of being overwritten.
 
-| Agente | MCP | Instruções |
+| Agent | MCP | Instructions |
 | --- | --- | --- |
-| Codex | `$CODEX_HOME/config.toml` ou `~/.codex/config.toml` | Bloco marcado no `AGENTS.md` global. |
-| Claude Code | `~/.claude.json` | Bloco marcado no `~/.claude/CLAUDE.md`. |
-| Cursor | `~/.cursor/mcp.json` | Orientações enviadas pelo próprio MCP. |
-| GitHub Copilot | `$COPILOT_HOME/mcp-config.json` ou `~/.copilot/mcp-config.json` | Orientações MCP. CLI e harness Copilot do VS Code; não configura o antigo MCP do perfil do editor. |
-| Gemini CLI | `~/.gemini/settings.json` | Orientações MCP. |
-| OpenCode 2 | `~/.config/opencode/opencode.json` ou `.jsonc` existente | Orientações MCP; entrada em `mcp.servers`. Formato legado não é migrado. |
+| Codex | `$CODEX_HOME/config.toml` or `~/.codex/config.toml` | Marked block in the global `AGENTS.md`. |
+| Claude Code | `~/.claude.json` | Marked block in `~/.claude/CLAUDE.md`. |
+| Cursor | `~/.cursor/mcp.json` | Instructions provided by MCP itself. |
+| GitHub Copilot | `$COPILOT_HOME/mcp-config.json` or `~/.copilot/mcp-config.json` | MCP instructions. Copilot CLI and the VS Code Copilot harness; does not configure the editor profile's older MCP format. |
+| Gemini CLI | `~/.gemini/settings.json` | MCP instructions. |
+| OpenCode 2 | `~/.config/opencode/opencode.json` or an existing `.jsonc` file | MCP instructions; entry in `mcp.servers`. The legacy format is not migrated. |
 
-Os adaptadores JSON preservam comentários JSONC e configurações de outros servidores. A configuração de clientes é validada com diretórios temporários e o protocolo MCP é testado localmente; a execução dentro de cada aplicativo depende de sua instalação, permissões e políticas. A detecção usa diretórios/configurações, executáveis e a extensão Copilot do VS Code, sem varrer conversas. Nenhum agente novo é ativado automaticamente.
+JSON adapters preserve JSONC comments and other server settings. Client configuration is validated using temporary directories, and the MCP protocol is tested locally; execution within each application depends on its installation, permissions, and policies. Detection uses directories/settings, executables, and the VS Code Copilot extension, without scanning conversations. New agents are never enabled automatically.
 
-Formatos verificados nas documentações de [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers), [VS Code](https://code.visualstudio.com/docs/agents/reference/mcp-configuration), [Gemini CLI](https://geminicli.com/docs/tools/mcp-server/) e [OpenCode](https://opencode.ai/docs/mcp-servers/). Logotipos SVG identificam os clientes; fonte e licença em `ui/public/agents/`.
+Formats were checked against the [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers), [VS Code](https://code.visualstudio.com/docs/agents/reference/mcp-configuration), [Gemini CLI](https://geminicli.com/docs/tools/mcp-server/), and [OpenCode](https://opencode.ai/docs/mcp-servers/) documentation. SVG logos identify clients; their source and license are in `ui/public/agents/`.
 
 ```sh
 wid agent codex --disable
@@ -265,29 +264,29 @@ wid hook-install claude
 wid hook-install claude --disable
 ```
 
-Desativar Claude remove também o hook desta instalação. O hook nunca registra o prompt bruto. Comandos usam o caminho absoluto do Node e da instalação; se mover ou reinstalar em outro caminho, desative na instalação antiga e ative na nova.
+Disabling Claude also removes this installation's hook. The hook never records raw prompts. Commands use the absolute paths to Node and the installation; if you move or reinstall at another path, disable the old installation and enable the new one.
 
-## Dados e privacidade
+## Data and privacy
 
-O diretório padrão é `%LOCALAPPDATA%/wid` no Windows e `~/.local/share/wid` nas demais plataformas. Contém `settings.json`, banco `postgres/` e um lock do processo ativo. Altere com `WID_DATA_DIR` ou `--data-dir` (use o mesmo diretório nos comandos e agentes).
+The default directory is `%LOCALAPPDATA%/wid` on Windows and `~/.local/share/wid` on other platforms. It contains `settings.json`, the `postgres/` database, and a lock for the active process. Change it with `WID_DATA_DIR` or `--data-dir` (use the same directory for commands and agents).
 
-- Sem telemetria, importação de conversas, captura de tela ou upload automático.
-- Registre resumos do trabalho; nunca prompts integrais, credenciais ou dados sensíveis.
-- O banco e os arquivos de configuração são locais; proteja o acesso à sua conta e ao disco. Não há criptografia de aplicação nem autenticação entre processos do mesmo usuário/máquina.
-- HTTP restringe host e origem a localhost e exige cabeçalho próprio nas mutações da API. Não há CORS para sites externos.
-- Correções acrescentam eventos; originais são preservados. Para corrigir tempo, informe `correctsEventId`, categoria, dia e total corrigido. Cada original admite uma correção; revisões posteriores de totais usam novos eventos de tempo.
-- Exportação JSON no painel. Importação e restauração de JSON ficam fora do MVP.
-- Para backup recuperável do banco embutido, pare o WID e copie o diretório de dados. Não copie um banco embutido em uso.
+- No telemetry, conversation import, screenshots, or automatic uploads.
+- Record work summaries, never complete prompts, credentials, or sensitive data.
+- The database and configuration files are local; protect access to your account and disk. There is no application-level encryption or authentication between processes on the same user/machine.
+- HTTP restricts host and origin to localhost and requires a dedicated header for API mutations. External sites receive no CORS access.
+- Corrections append events and preserve originals. To correct time, provide `correctsEventId`, category, day, and the corrected total. Each original allows one correction; later total revisions use new time events.
+- JSON export is available in the dashboard. JSON import and restoration are outside the MVP.
+- For a recoverable backup of the embedded database, stop WID and copy its data directory. Do not copy an embedded database while it is in use.
 
-### PostgreSQL externo (opcional)
+### External PostgreSQL (optional)
 
-Defina `WID_DATABASE_URL` no ambiente do processo servidor, apontando para um **banco exclusivo do WID**, e execute `wid start`. O esquema usa tabelas `wid_*`. O WID não cria banco/usuário no servidor e não grava a connection string em configurações de agentes ou exportações.
+Set `WID_DATABASE_URL` in the server process environment, pointing to a **database dedicated to WID**, and run `wid start`. The schema uses `wid_*` tables. WID does not create a database/user on the server and does not store the connection string in agent configuration or exports.
 
-Esse modo usa o adaptador `pg`. O fluxo local padrão é testado com PostgreSQL embutido; para usar um servidor externo, valide a conexão e permissões no seu ambiente. Trocar de motor não migra os dados automaticamente.
+This mode uses the `pg` adapter. The default local flow is tested with embedded PostgreSQL; validate connectivity and permissions in your environment before using an external server. Changing engines does not migrate data automatically.
 
-## Desenvolvimento
+## Development
 
-O checkout local principal fica em `C:\nac\wid`. O kit original de identidade visual fica em `brand/`: logo em SVG para cada tema, símbolo e ícones de web/aplicativo. Os SVGs usados no painel são importados diretamente dos arquivos mestres; `ui/public` contém os arquivos preparados de favicon e ícones de aplicativo para servir em URLs estáveis. Não redesenhe nem altere as proporções dos ativos. O manifesto declara a identidade de aplicativo; esta versão não oferece cache offline.
+The primary local checkout is `C:\nac\wid`. The original brand kit is in `brand/`: an SVG logo for each theme, the symbol, and web/application icons. Dashboard SVGs are imported directly from the master files; `ui/public` contains prepared favicon and application icon files served at stable URLs. Do not redraw or change the assets' proportions. The manifest declares the application identity; this version does not provide offline caching.
 
 ```sh
 git clone https://github.com/natharuc/wid.git
@@ -299,34 +298,33 @@ npm run build
 npm start
 ```
 
-`npm install` executa o build via `prepare`. Se o PATH exceder o limite do `cmd.exe` no Windows, use um terminal com PATH reduzido ou `npm --script-shell pwsh install` / `npm --script-shell pwsh run build`.
+`npm install` runs the build through `prepare`. If PATH exceeds the Windows `cmd.exe` limit, use a terminal with a shorter PATH or `npm --script-shell pwsh install` / `npm --script-shell pwsh run build`.
 
-Estrutura:
+Structure:
 
 ```text
-src/domain/           contratos, validações, estados e cálculo de tempo
-src/application/      casos de uso e porta de persistência
-src/infrastructure/   PostgreSQL, configurações e integração com agentes
-src/interface/        HTTP, MCP e stdio
-ui/                   painel React + DaisyUI + Tailwind
-tests/                domínio, banco real embutido, HTTP/MCP e configuração isolada
+src/domain/           contracts, validation, states, and time accounting
+src/application/      use cases and the persistence port
+src/infrastructure/   PostgreSQL, settings, and agent integration
+src/interface/        HTTP, MCP, and stdio
+ui/                   React + DaisyUI + Tailwind dashboard
+tests/                domain, real embedded database, HTTP/MCP, and isolated configuration
 ```
 
-O domínio não conhece HTTP, MCP, interface web nem banco. O serviço de aplicação depende da porta `WorkStore`; a infraestrutura implementa essa porta. As interfaces usam os mesmos casos de uso. Transações garantem atomicidade entre tarefa, evento e idempotência; a projeção atual é acompanhada por eventos imutáveis.
+The domain has no knowledge of HTTP, MCP, the web interface, or the database. The application service depends on the `WorkStore` port; infrastructure implements it. Interfaces use the same use cases. Transactions keep tasks, events, and idempotency atomic; immutable events accompany the current projection.
 
-## Próximos passos
+## Next steps
 
-Publicação no registro npm; conectores autenticados de leitura para GitHub/Azure DevOps; temporizador humano explícito; mais agentes e hooks documentados; paginação, filtros e cobertura declarada pelo usuário; importação e recuperação de exportações.
+Publication to the npm registry; authenticated read connectors for GitHub/Azure DevOps; an explicit human timer; more agents and documented hooks; pagination, filters, and user-declared coverage; export import and recovery.
 
-## Referências de implementação
+## Implementation references
 
-- [DaisyUI com Vite](https://daisyui.com/docs/install/vite/) e [temas prontos](https://daisyui.com/docs/themes/).
-
-- [MCP TypeScript SDK](https://ts.sdk.modelcontextprotocol.io/server) e [transporte local e HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
-- [Codex MCP](https://developers.openai.com/codex/mcp) e [instruções AGENTS.md](https://developers.openai.com/codex/guides/agents-md).
-- [Claude Code MCP](https://code.claude.com/docs/en/mcp) e [hooks](https://code.claude.com/docs/en/hooks).
+- [DaisyUI with Vite](https://daisyui.com/docs/install/vite/) and [built-in themes](https://daisyui.com/docs/themes/).
+- [MCP TypeScript SDK](https://ts.sdk.modelcontextprotocol.io/server) and [local and HTTP transports](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+- [Codex MCP](https://developers.openai.com/codex/mcp) and [AGENTS.md instructions](https://developers.openai.com/codex/guides/agents-md).
+- [Claude Code MCP](https://code.claude.com/docs/en/mcp) and [hooks](https://code.claude.com/docs/en/hooks).
 - [Cursor MCP](https://cursor.com/docs/mcp).
 
-## Licença
+## License
 
 MIT.

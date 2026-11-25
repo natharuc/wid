@@ -11,10 +11,10 @@ export function ThemeToggle({
     <button
       type="button"
       role="switch"
-      aria-label="Modo escuro"
+      aria-label="Dark mode"
       aria-checked={dark}
       className="btn btn-ghost btn-square"
-      title="Alternar modo escuro"
+      title="Toggle dark mode"
       onClick={() => onChange(!dark)}
     >
       {dark ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}

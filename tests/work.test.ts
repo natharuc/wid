@@ -34,7 +34,7 @@ test('create is atomic and retries are idempotent, including concurrent calls', 
   assert.deepEqual(first, second);
   await assert.rejects(
     work.create({ ...input, title: 'Changed content' }, identity),
-    /conteúdo diferente/,
+    /different content/,
   );
 });
 
@@ -90,7 +90,7 @@ test('task detail isolates full history across months and preserves cumulative h
   const zero = await work.detail(task.id, 'America/Sao_Paulo');
   assert.equal(zero.days[0].humanTimeRecorded, true);
   assert.equal(zero.daysWithoutTime, 0);
-  await assert.rejects(work.detail(randomUUID(), 'America/Sao_Paulo'), /não encontrada/);
+  await assert.rejects(work.detail(randomUUID(), 'America/Sao_Paulo'), /not found/);
 });
 
 test('adding references is audited, idempotent and works on completed tasks without duplicating them', async () => {
@@ -144,7 +144,7 @@ test('adding references is audited, idempotent and works on completed tasks with
       },
       identity,
     ),
-    /máximo 20/,
+    /at most 20/,
   );
   const detail = await work.detail(task.id, 'America/Sao_Paulo');
   assert.equal(detail.task.references.length, 2);
@@ -162,7 +162,7 @@ test('state transition failure rolls back its event and idempotency claim', asyn
   const key = randomUUID();
   await assert.rejects(
     work.record({ taskId: task.id, kind: 'started', note: 'Again', idempotencyKey: key }, identity),
-    /encerrada/,
+    /closed/,
   );
   await work.record(
     { taskId: task.id, kind: 'decided', note: 'Follow-up', idempotencyKey: key },
@@ -232,7 +232,7 @@ test('correction preserves original and replaces effort without double counting'
   await work.record(correction, identity);
   await assert.rejects(
     work.record({ ...correction, idempotencyKey: randomUUID() }, identity),
-    /já possui correção/,
+    /already has a correction/,
   );
   const { events } = await work.snapshot();
   const own = events.filter((event) => event.taskId === task.id);
@@ -267,7 +267,7 @@ test('historical offsets use São Paulo local day and invalid dates/future work 
       { title: 'Future event', occurredAt: '2027-01-01T00:00:00Z', idempotencyKey: randomUUID() },
       identity,
     ),
-    /horário ocorrido/,
+    /past timestamp/,
   );
 });
 test('embedded PostgreSQL survives closing and reopening', async () => {

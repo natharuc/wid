@@ -10,7 +10,7 @@ export function WorkDigestView({
   digest,
   events,
   timezone,
-  title = 'O que você fez',
+  title = 'What you did',
   showTaskLinks = true,
 }: {
   digest: WorkDigest;
@@ -52,7 +52,7 @@ export function WorkDigestView({
         {items.length > 5 && (
           <details className="space-y-3">
             <summary className="cursor-pointer text-sm text-primary">
-              Ver mais {items.length - 5} tarefas
+              View more tasks ({items.length - 5})
             </summary>
             <div className="space-y-4 mt-4">{cards(items.slice(5))}</div>
           </details>
@@ -71,25 +71,25 @@ export function WorkDigestView({
       ) : (
         <div className="card bg-base-100 border border-base-300">
           <p className="card-body p-5 text-sm text-base-content/60">
-            Nenhum resultado ou avanço registrado neste dia.
+            No results or progress recorded for this day.
           </p>
         </div>
       )}
       {planned.length > 0 && (
         <div className="space-y-3 pt-2">
-          <h3 className="font-medium text-sm text-base-content/60">Planejado</h3>
+          <h3 className="font-medium text-sm text-base-content/60">Planned</h3>
           {draw(planned)}
         </div>
       )}
       {recorded.length > 0 && (
         <div className="space-y-3 pt-2">
-          <h3 className="font-medium text-sm text-base-content/60">Registros anteriores</h3>
+          <h3 className="font-medium text-sm text-base-content/60">Earlier records</h3>
           {draw(recorded)}
         </div>
       )}
       {digest.administrativeEvents > 0 && (
         <p className="text-xs text-base-content/60">
-          {digest.administrativeEvents} atualizações administrativas disponíveis no histórico.
+          Administrative updates in history: {digest.administrativeEvents}.
         </p>
       )}
     </section>
@@ -128,7 +128,7 @@ function DigestItem({
             <a
               className="btn btn-ghost btn-sm btn-square shrink-0"
               href={href(taskPath(item.taskId))}
-              aria-label={`Abrir tarefa: ${item.title}`}
+              aria-label={`Open task: ${item.title}`}
             >
               <ArrowUpRight size={17} />
             </a>
@@ -143,7 +143,7 @@ function DigestItem({
                 </span>
                 <span className="text-base-content/60">{actorLabel[fact.actor]}</span>
                 {!fact.structured && fact.outcome !== 'recorded' && (
-                  <span className="text-base-content/50">Registro anterior</span>
+                  <span className="text-base-content/50">Earlier record</span>
                 )}
               </div>
               <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">

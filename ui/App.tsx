@@ -45,7 +45,7 @@ export function App() {
             <span>{notice}</span>
             <button
               className="btn btn-ghost btn-sm btn-square"
-              aria-label="Dispensar aviso"
+              aria-label="Dismiss notice"
               onClick={() => setNotice('')}
             >
               <X size={16} />
@@ -55,7 +55,7 @@ export function App() {
         {loading ? (
           <div className="flex items-center gap-3 py-16" role="status">
             <span className="loading loading-spinner loading-sm" />
-            Carregando registros…
+            Loading records…
           </div>
         ) : (
           <>
@@ -71,15 +71,15 @@ export function App() {
                 />
                 <details className="collapse collapse-arrow border border-base-300 bg-base-100">
                   <summary className="collapse-title font-medium text-sm">
-                    Histórico e execução dos agentes
+                    History and agent runtime
                   </summary>
                   <div className="collapse-content space-y-5">
                     <p className="text-xs text-base-content/60">
-                      Execução dos agentes e espera ficam fora das horas humanas.
+                      Agent runtime and waiting are excluded from human work time.
                     </p>
                     <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                      <span>Agentes: {hours(daily.minutes.agent_run)}</span>
-                      <span>Espera / jobs: {hours(daily.minutes.wait)}</span>
+                      <span>Agents: {hours(daily.minutes.agent_run)}</span>
+                      <span>Waiting / jobs: {hours(daily.minutes.wait)}</span>
                     </div>
                     <ActivityView
                       page="day"

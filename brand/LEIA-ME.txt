@@ -1,58 +1,60 @@
-WID GEOMÉTRICO — KIT DE MARCA
+GEOMETRIC WID — BRAND KIT
 What I Did
 
-VERSÃO
-25 de novembro de 2026
-Reconstrução vetorial do conceito WID geométrico escolhido nesta conversa.
+VERSION
+November 25, 2026
+Vector reconstruction of the selected geometric WID concept.
 
-1. LOGO COMPLETO
-Pasta: 01-logo
-SVG nas versões grafite, preto e branco.
-PNG transparente nas larguras de 2048 e 4096 pixels.
-As letras e os ponteiros são formas vetoriais; nenhuma fonte precisa ser instalada.
+1. FULL LOGO
+Folder: 01-logo
+SVG versions in graphite, black and white.
+Transparent PNGs at widths of 2048 and 4096 pixels.
+Letters and clock hands are vector shapes; no font installation is required.
 
-2. ÍCONE
-Pasta: 02-icone
-O símbolo é o D com relógio retirado do próprio logo.
-SVG grafite, preto e branco.
-PNG transparente em 256, 512 e 1024 pixels, sempre quadrado.
+2. ICON
+Folder: 02-icone
+The symbol is the D with a clock taken from the logo itself.
+SVG versions in graphite, black and white.
+Square transparent PNGs at 256, 512 and 1024 pixels.
 
-3. WEB E APLICATIVO
-Pasta: 03-web-app
-favicon.svg: símbolo branco em fundo grafite com cantos arredondados.
-favicon.ico: arquivo com tamanhos 16, 32, 48 e 64 pixels.
-favicon-16/32/48/64.png: versões individuais para navegador.
-Os ponteiros do favicon recebem ajuste de espessura e comprimento para leitura pequena.
-wid-app.svg e wid-app-192/512/1024.png: ícone com fundo grafite opaco e margem de segurança.
-apple-touch-icon.png: aplicação opaca de 180 × 180 pixels.
-Os ícones de aplicativo têm fundo quadrado inteiro; o sistema pode aplicar sua própria máscara.
+3. WEB AND APP
+Folder: 03-web-app
+favicon.svg: white symbol on a graphite background with rounded corners.
+favicon.ico: 16, 32, 48 and 64 pixel sizes in one file.
+favicon-16/32/48/64.png: individual browser sizes.
+The favicon clock hands have adjusted thickness and length for small sizes.
+wid-app.svg and wid-app-192/512/1024.png: icon with an opaque graphite background and safe margin.
+apple-touch-icon.png: opaque 180 × 180 pixel version.
+App icons have a full square background; the platform may apply its own mask.
 
-4. PRÉVIA
-Pasta: 04-previa
-Visão geral do logo e do símbolo em fundos claro e escuro.
+4. PREVIEW
+Folder: 04-previa
+Overview of the logo and symbol on light and dark backgrounds.
 
-CORES
-Grafite principal: #1A1A1A / RGB 26, 26, 26.
-Preto absoluto: #000000 / RGB 0, 0, 0.
-Branco: #FFFFFF / RGB 255, 255, 255.
-Fundo claro sugerido para apresentação: #F7F7F3.
+COLORS
+Primary graphite: #1A1A1A / RGB 26, 26, 26.
+Pure black: #000000 / RGB 0, 0, 0.
+White: #FFFFFF / RGB 255, 255, 255.
+Suggested light presentation background: #F7F7F3.
 
-COMO USAR
-Use SVG em interfaces, materiais vetoriais e aplicações que precisem de escala.
-Use PNG quando a ferramenta de destino pedir uma imagem.
-Use grafite ou preto sobre fundos claros e branco sobre fundos escuros.
-Mantenha a proporção entre largura e altura.
-Deixe ao redor do logo uma área livre de pelo menos 1/4 da altura da letra I.
-O espaço de proteção deve ser considerado na aplicação, além da margem já presente no arquivo.
-Para o logo completo abaixo de 400 pixels de largura, confira a leitura dos ponteiros.
-Nas aplicações muito pequenas, prefira o ícone e os arquivos de favicon preparados.
+USAGE
+Use SVG for interfaces, vector materials and applications that need to scale.
+Use PNG when the destination tool requires a raster image.
+Use graphite or black on light backgrounds and white on dark backgrounds.
+Preserve the width-to-height ratio.
+Leave clear space around the logo of at least 1/4 of the height of the letter I.
+Allow for this clear space in the application, in addition to the file's existing margin.
+Check the clock hands for legibility when the full logo is less than 400 pixels wide.
+Prefer the icon and prepared favicons for very small applications.
 
-TRANSPARÊNCIA
-Os PNGs em 01-logo e 02-icone têm transparência real, inclusive no espaço interno do D.
-O branco pode parecer vazio quando visualizado sobre branco; aplique-o em fundo escuro.
-Os arquivos de aplicativo e a prévia têm fundo intencional.
+TRANSPARENCY
+PNGs in 01-logo and 02-icone have true transparency, including the space inside the D.
+White artwork may appear empty on white; view it on a dark background.
+App files and the preview intentionally include a background.
 
-ESTRUTURA VETORIAL
-Os SVGs de logo e ícone contêm caminhos vetoriais reais, sem bitmap incorporado,
-sem fonte externa, sem script e sem dependência de rede.
-Os SVGs são arquivos mestres editáveis em editores vetoriais.
+VECTOR STRUCTURE
+Logo and icon SVGs contain vector paths, with no embedded bitmap,
+external font, script or network dependency.
+SVGs are master files that can be edited in vector editors.
+
+Original asset filenames are preserved for compatibility with existing paths.

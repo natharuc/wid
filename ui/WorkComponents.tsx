@@ -48,7 +48,7 @@ export function TaskRow({
           {task.title}
         </a>
         <p className="text-xs text-base-content/60 mt-1">
-          {[task.company, task.project].filter(Boolean).join(' / ') || 'Sem projeto'}
+          {[task.company, task.project].filter(Boolean).join(' / ') || 'No project'}
         </p>
       </td>
       <td>
@@ -78,25 +78,25 @@ export function TimelineEvent({
   const { href } = useWorkContext();
   const confidence =
     event.effort?.confidence &&
-    { low: 'baixa', medium: 'média', high: 'alta' }[event.effort.confidence];
+    { low: 'low', medium: 'medium', high: 'high' }[event.effort.confidence];
   const category =
     event.effort &&
     {
-      human_estimated: `estimado · confiança ${confidence}`,
-      human_measured: 'humano medido',
-      agent_run: 'execução do agente',
-      wait: 'espera',
+      human_estimated: `estimated · confidence ${confidence}`,
+      human_measured: 'measured human time',
+      agent_run: 'agent runtime',
+      wait: 'waiting',
     }[event.effort.category];
   return (
     <article className="collapse collapse-arrow border border-base-300 rounded-box bg-base-100">
       <input
         type="checkbox"
-        aria-label={`Detalhes: ${kindLabel[event.kind]} em ${task?.title ?? 'tarefa'}`}
+        aria-label={`Details: ${kindLabel[event.kind]} in ${task?.title ?? 'task'}`}
       />
       <div className="collapse-title p-4 pr-10">
         <div className="flex items-center justify-between gap-2 text-xs text-base-content/60 mb-1">
           <time>
-            {new Intl.DateTimeFormat('pt-BR', {
+            {new Intl.DateTimeFormat('en', {
               hour: '2-digit',
               minute: '2-digit',
               timeZone: timezone,
@@ -128,7 +128,7 @@ export function TimelineEvent({
           />
         )}
         <a className="btn btn-ghost btn-xs" href={href(taskPath(event.taskId))}>
-          Abrir tarefa
+          Open task
           <ArrowUpRight size={13} />
         </a>
         <dl className="text-xs text-base-content/60 space-y-2 break-all">
@@ -137,7 +137,7 @@ export function TimelineEvent({
             <dd>{event.id}</dd>
           </div>
           <div>
-            <dt className="font-medium">Ocorrido / registrado</dt>
+            <dt className="font-medium">Occurred / recorded</dt>
             <dd>
               {event.occurredAt}
               <br />
@@ -146,7 +146,7 @@ export function TimelineEvent({
           </div>
           {event.source.sessionId && (
             <div>
-              <dt className="font-medium">Sessão</dt>
+              <dt className="font-medium">Session</dt>
               <dd>{event.source.sessionId}</dd>
             </div>
           )}

@@ -2,12 +2,12 @@ import type { StructuredWork, WorkEvidence, WorkEpisode } from '../src/domain/wo
 import type { DigestFact } from '../src/domain/work-digest';
 
 export const outcomeLabel: Record<DigestFact['outcome'], string> = {
-  planned: 'Planejado',
-  advanced: 'Avançou',
-  delivered: 'Entregue',
-  blocked: 'Bloqueado',
-  cancelled: 'Cancelado',
-  recorded: 'Registro anterior',
+  planned: 'Planned',
+  advanced: 'Advanced',
+  delivered: 'Delivered',
+  blocked: 'Blocked',
+  cancelled: 'Cancelled',
+  recorded: 'Earlier record',
 };
 export const outcomeClass: Record<DigestFact['outcome'], string> = {
   planned: 'badge-ghost',
@@ -18,23 +18,29 @@ export const outcomeClass: Record<DigestFact['outcome'], string> = {
   recorded: 'badge-ghost',
 };
 export const actorLabel: Record<StructuredWork['actor'], string> = {
-  human: 'Você',
-  agent: 'Agente',
-  joint: 'Você e IA',
-  unknown: 'Autoria não informada',
+  human: 'You',
+  agent: 'Agent',
+  joint: 'You and AI',
+  unknown: 'Actor unknown',
 };
 export const evidenceLabel: Record<WorkEvidence['kind'], string> = {
-  human_message: 'Mensagem do usuário',
-  agent_message: 'Mensagem do agente',
-  tool_result: 'Resultado de ferramenta',
-  user_report: 'Relato do usuário',
+  human_message: 'User message',
+  agent_message: 'Agent message',
+  tool_result: 'Tool result',
+  user_report: 'User report',
 };
 export const phaseLabel: Record<WorkEpisode['phase'], string> = {
-  definition: 'Definição',
-  review: 'Revisão',
-  decision: 'Decisão',
-  validation: 'Validação',
-  execution: 'Execução',
-  other: 'Outra participação',
+  definition: 'Definition',
+  review: 'Review',
+  decision: 'Decision',
+  validation: 'Validation',
+  execution: 'Execution',
+  other: 'Other participation',
 };
-export const formatDay = (day: string) => day.split('-').reverse().join('/');
+export const formatDay = (day: string) =>
+  new Intl.DateTimeFormat('en', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  }).format(new Date(`${day}T12:00:00Z`));

@@ -125,18 +125,18 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
         name: 'wid_create_task',
         arguments: {
           title: 'Other context',
-          context: 'Pesquisa / Cliente Á',
+          context: 'Research / Café',
           idempotencyKey: 'context-create',
         },
       }),
     );
-    assert.equal(other.task.context, 'Pesquisa / Cliente Á');
+    assert.equal(other.task.context, 'Research / Café');
     const groups = decode(await client.callTool({ name: 'wid_list_contexts', arguments: {} }));
-    assert.ok(groups.some((group: { name: string }) => group.name === 'Pesquisa / Cliente Á'));
+    assert.ok(groups.some((group: { name: string }) => group.name === 'Research / Café'));
     const isolated = decode(
       await client.callTool({
         name: 'wid_report_month',
-        arguments: { month: '2026-11', context: 'Pesquisa / Cliente Á' },
+        arguments: { month: '2026-11', context: 'Research / Café' },
       }),
     );
     assert.equal(isolated.totals.humanMinutes, 0);
@@ -146,8 +146,8 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
         arguments: {
           taskId: created.task.id,
           kind: 'context_changed',
-          context: 'Pesquisa / Cliente Á',
-          note: 'Classificação definida pelo agente.',
+          context: 'Research / Café',
+          note: 'Context assigned by the agent.',
           idempotencyKey: 'context-move',
         },
       }),
@@ -157,7 +157,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const scoped = decode(
       await client.callTool({
         name: 'wid_report_month',
-        arguments: { month: '2026-11', context: 'pesquisa / cliente a' },
+        arguments: { month: '2026-11', context: 'research / cafe' },
       }),
     );
     assert.equal(scoped.totals.humanMinutes, 90);
@@ -170,7 +170,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     assert.equal(oldScope.totals.humanMinutes, 0);
     const viaStdioApi = (await (
       await fetch(
-        `${url}/api/agent/codex/snapshot?context=${encodeURIComponent('Pesquisa / Cliente Á')}`,
+        `${url}/api/agent/codex/snapshot?context=${encodeURIComponent('Research / Café')}`,
       )
     ).json()) as { tasks: unknown[] };
     assert.equal(viaStdioApi.tasks.length, 2);
@@ -198,12 +198,12 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     };
     assert.equal(detail.task.references.length, 2);
     const scopedDetail = await fetch(
-      `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('pesquisa / cliente a')}`,
+      `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('research / cafe')}`,
     );
     assert.equal(scopedDetail.status, 200);
     const wrongContext = await fetch(`${url}/api/tasks/${created.task.id}?context=OUTROS`);
     assert.equal(wrongContext.status, 404);
-    assert.deepEqual(await wrongContext.json(), { error: 'Tarefa não encontrada neste contexto.' });
+    assert.deepEqual(await wrongContext.json(), { error: 'Task not found in this context.' });
     assert.equal(detail.totals.humanMinutes, 90);
     assert.ok(detail.events.every((event) => event.taskId === created.task.id));
     assert.equal((await fetch(`${url}/api/tasks/${randomUUID()}`)).status, 404);
@@ -257,7 +257,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const historicDay = decode(
       await client.callTool({
         name: 'wid_report_day',
-        arguments: { day: '2026-11-03', context: 'Pesquisa / Cliente Á' },
+        arguments: { day: '2026-11-03', context: 'Research / Café' },
       }),
     );
     assert.equal(historicDay.events, 1);
@@ -265,7 +265,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const historicMonth = decode(
       await client.callTool({
         name: 'wid_report_month',
-        arguments: { month: '2026-11', context: 'Pesquisa / Cliente Á' },
+        arguments: { month: '2026-11', context: 'Research / Café' },
       }),
     );
     assert.equal(historicMonth.totals.humanMinutes, 90);
@@ -280,17 +280,17 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const observed = {
       taskId: created.task.id,
       kind: 'work_recorded',
-      note: 'Resultado de teste executado pelo agente; participação humana não observada.',
+      note: 'Test result produced by the agent; human participation was not observed.',
       work: {
         day: '2026-11-23',
-        summary: 'Validou o fluxo de recebimentos com os testes automatizados.',
+        summary: 'Validated the receipts flow with automated tests.',
         outcome: 'delivered',
         actor: 'agent',
         evidence: [
           {
             id: 'observation:test-result:1',
             kind: 'tool_result',
-            summary: 'A execução de teste terminou sem falhas.',
+            summary: 'The test run completed without failures.',
             sourceId: 'fixture-test-result',
           },
         ],
@@ -300,7 +300,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
           window: { startedAt: '2026-11-23T09:00:00-03:00', endedAt: '2026-11-23T09:45:00-03:00' },
         },
       },
-      references: [{ label: 'Relatório de testes', url: 'https://example.com/test-result' }],
+      references: [{ label: 'Test report', url: 'https://example.com/test-result' }],
       idempotencyKey: 'structured-work-mcp',
     };
     const workResult = await client.callTool({ name: 'wid_record_event', arguments: observed });
@@ -311,7 +311,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const digestDay = decode(
       await client.callTool({
         name: 'wid_report_day',
-        arguments: { day: '2026-11-23', context: 'Pesquisa / Cliente Á' },
+        arguments: { day: '2026-11-23', context: 'Research / Café' },
       }),
     );
     assert.equal(digestDay.humanTimeRecorded, false);
@@ -320,7 +320,7 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     assert.equal(digestDay.digest.items[0].evidenceCount, 1);
     const detailWithDigest = (await (
       await fetch(
-        `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('Pesquisa / Cliente Á')}`,
+        `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('Research / Café')}`,
       )
     ).json()) as { digest: { day: string; items: { facts: { eventId: string }[] }[] }[] };
     assert.equal(

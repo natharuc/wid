@@ -4,10 +4,10 @@ import type { Task } from './api';
 function destination(url: string) {
   const { hostname, protocol } = new URL(url);
   if (hostname === 'dev.azure.com' || hostname.endsWith('.visualstudio.com'))
-    return 'Abrir no Azure DevOps';
-  if (hostname === 'github.com') return 'Abrir no GitHub';
-  if (hostname === 'slack.com' || hostname.endsWith('.slack.com')) return 'Abrir no Slack';
-  return protocol === 'thread:' ? 'Abrir chat' : 'Abrir referência';
+    return 'Open in Azure DevOps';
+  if (hostname === 'github.com') return 'Open in GitHub';
+  if (hostname === 'slack.com' || hostname.endsWith('.slack.com')) return 'Open in Slack';
+  return protocol === 'thread:' ? 'Open chat' : 'Open reference';
 }
 export function ReferenceLinks({ references }: { references: Task['references'] }) {
   return (
@@ -15,7 +15,7 @@ export function ReferenceLinks({ references }: { references: Task['references'] 
       <div className="card-body p-5 gap-4">
         <h2 className="card-title text-base">
           <Link2 size={18} />
-          Referências
+          References
         </h2>
         {references.length ? (
           references.map((ref) => (
@@ -34,7 +34,7 @@ export function ReferenceLinks({ references }: { references: Task['references'] 
             </div>
           ))
         ) : (
-          <p className="text-sm text-base-content/60">Nenhuma referência registrada.</p>
+          <p className="text-sm text-base-content/60">No references recorded.</p>
         )}
       </div>
     </section>

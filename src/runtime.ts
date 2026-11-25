@@ -47,13 +47,13 @@ export async function runServer(directory: string) {
     if (owner) {
       try {
         process.kill(owner, 0);
-        throw new Error('WID já está iniciando ou rodando neste diretório.');
+        throw new Error('WID is already starting or running in this directory.');
       } catch (check) {
         if ((check as NodeJS.ErrnoException).code !== 'ESRCH') throw check;
       }
     } else
       throw new Error(
-        'Inicialização do WID em andamento. Se interrompida, remova service.lock somente após conferir que não há WID em execução.',
+        'WID startup is in progress. If it was interrupted, remove service.lock only after confirming that WID is not running.',
       );
     await rm(lock, { recursive: true });
     await mkdir(lock);
@@ -116,10 +116,10 @@ export async function ensureServer(directory: string) {
   if (await isHealthy(url, directory)) return url;
   if (await isHealthy(url))
     throw new Error(
-      'Outro diretório WID usa esta porta. Pare essa instância ou configure outra porta em settings.json.',
+      'Another WID data directory is using this port. Stop that instance or configure a different port in settings.json.',
     );
   if (cliPath.endsWith('.ts'))
-    throw new Error('Execute npm run build antes de iniciar em background.');
+    throw new Error('Run npm run build before starting in the background.');
   const child = spawn(process.execPath, [cliPath, 'start', '--data-dir', resolve(directory)], {
     detached: true,
     windowsHide: true,
@@ -137,6 +137,6 @@ export async function ensureServer(directory: string) {
     await new Promise((done) => setTimeout(done, 250));
   }
   throw new Error(
-    'WID não iniciou. Execute wid start em primeiro plano para diagnosticar; confira porta e diretório de dados.',
+    'WID did not start. Run wid start in the foreground to diagnose the issue; check the port and data directory.',
   );
 }

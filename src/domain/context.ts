@@ -1,3 +1,4 @@
+// Preserve the legacy identifier used by stored tasks and older clients.
 export const DEFAULT_CONTEXT = 'OUTROS';
 
 export function contextKey(value: string): string {
@@ -6,7 +7,7 @@ export function contextKey(value: string): string {
     .replace(/\s+/g, ' ')
     .normalize('NFD')
     .replace(/\p{M}/gu, '')
-    .toLocaleLowerCase('pt-BR');
+    .toLocaleLowerCase('en');
 }
 
 export interface ContextSummary {
@@ -22,5 +23,5 @@ export function summarizeContexts(tasks: { context: string }[]): ContextSummary[
     group.taskCount++;
     groups.set(key, group);
   }
-  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, 'en'));
 }

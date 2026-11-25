@@ -13,11 +13,11 @@ export function ContextFilter({
   return (
     <select
       className="select w-full sm:w-auto sm:max-w-64"
-      aria-label="Contexto de trabalho"
+      aria-label="Work context"
       value={contexts.find((item) => contextKey(item.name) === contextKey(value))?.name ?? value}
       onChange={(event) => onChange(event.target.value)}
     >
-      <option value="">Todos os contextos</option>
+      <option value="">All contexts</option>
       {value && !contexts.some((item) => contextKey(item.name) === contextKey(value)) && (
         <option value={value}>{value} (0)</option>
       )}

@@ -20,7 +20,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
       setError('');
     } catch (err) {
       setData(undefined);
-      document.title = 'Tarefa indisponível — WID';
+      document.title = 'Task unavailable — WID';
       setError((err as Error).message);
     }
   }, [taskId, context]);
@@ -39,14 +39,14 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
       <div className="space-y-4">
         <a href={href('/tasks')} className="btn btn-ghost btn-sm">
           <ArrowLeft size={16} />
-          Tarefas
+          Tasks
         </a>
         {error ? (
           <p role="alert" className="alert alert-error alert-soft">
             {error}
           </p>
         ) : (
-          <p role="status">Carregando tarefa…</p>
+          <p role="status">Loading task…</p>
         )}
       </div>
     );
@@ -61,11 +61,11 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
       <div className="flex items-center justify-between gap-3">
         <a href={href('/tasks')} className="btn btn-ghost btn-sm">
           <ArrowLeft size={16} />
-          Tarefas
+          Tasks
         </a>
         <button className="btn btn-ghost btn-sm" onClick={() => void reload()}>
           <RefreshCw size={14} />
-          Atualizar
+          Refresh
         </button>
       </div>
       {error && (
@@ -80,39 +80,39 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
         </div>
         <h2 className="text-2xl sm:text-3xl font-semibold break-words">{task.title}</h2>
         <p className="text-sm text-base-content/60">
-          {[task.company, task.project].filter(Boolean).join(' / ') || 'Sem projeto'}
+          {[task.company, task.project].filter(Boolean).join(' / ') || 'No project'}
         </p>
         <p className="text-xs text-base-content/60">
-          Criada em {formatDate(task.createdAt, timezone)} · Atualizada em{' '}
+          Created {formatDate(task.createdAt, timezone)} · Updated{' '}
           {formatDate(task.updatedAt, timezone)}
         </p>
       </section>
       {digest && (
         <div className="space-y-2">
-          <p className="text-xs text-base-content/60">Resumo de {formatDay(digest.day)}</p>
+          <p className="text-xs text-base-content/60">Summary for {formatDay(digest.day)}</p>
           <WorkDigestView
             digest={digest}
             events={events}
             timezone={timezone}
-            title="Resultado e andamento"
+            title="Results and progress"
             showTaskLinks={false}
           />
         </div>
       )}
       <TaskTimeSummary data={data} />
       <p className="text-xs text-base-content/60">
-        Cobertura parcial. Dias sem registros têm tempo desconhecido.
+        Partial coverage. Days without records have unknown work time.
       </p>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div className="xl:col-span-2 order-2 xl:order-1">
           <details className="collapse collapse-arrow border border-base-300 bg-base-100">
             <summary className="collapse-title text-sm font-medium">
-              Histórico completo ({events.length})
+              Full history ({events.length})
             </summary>
             <div className="collapse-content space-y-4">
               {intention && intention !== task.title && (
                 <section className="space-y-2">
-                  <h2 className="font-medium text-sm">Intenção inicial</h2>
+                  <h2 className="font-medium text-sm">Initial intention</h2>
                   <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                     {intention}
                   </p>

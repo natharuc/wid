@@ -26,21 +26,21 @@ after(async () => {
 
 test('arbitrary contexts are dynamic; grouping ignores case, accents and repeated spaces', async () => {
   const first = await service.create(
-    { title: 'A', context: 'Revisão Técnica', idempotencyKey: randomUUID() },
+    { title: 'A', context: 'Résumé review', idempotencyKey: randomUUID() },
     source,
   );
   await service.create(
-    { title: 'B', context: 'revisao    tecnica', idempotencyKey: randomUUID() },
+    { title: 'B', context: 'resume    review', idempotencyKey: randomUUID() },
     source,
   );
   await service.create(
-    { title: 'C', context: 'Cliente Ω / discovery', idempotencyKey: randomUUID() },
+    { title: 'C', context: 'Client Ω / discovery', idempotencyKey: randomUUID() },
     source,
   );
   const groups = await service.contexts();
   assert.equal(groups.length, 2);
-  assert.equal(groups.find((group) => group.name === 'Revisão Técnica')?.taskCount, 2);
-  const scoped = await service.snapshot(' REVISAO TECNICA ');
+  assert.equal(groups.find((group) => group.name === 'Résumé review')?.taskCount, 2);
+  const scoped = await service.snapshot(' RESUME REVIEW ');
   assert.equal(scoped.tasks.length, 2);
   assert.ok(scoped.tasks.some((task) => task.id === first.task.id));
   assert.equal((await service.snapshot('Not present')).tasks.length, 0);

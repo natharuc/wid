@@ -4,7 +4,7 @@ import { WorkEvidenceDetails } from './WorkEvidenceDetails';
 import { actorLabel, formatDay, outcomeLabel } from './workLabels';
 
 export const formatDate = (value: string, timezone: string) =>
-  new Intl.DateTimeFormat('pt-BR', {
+  new Intl.DateTimeFormat('en', {
     dateStyle: 'short',
     timeStyle: 'short',
     timeZone: timezone,
@@ -19,7 +19,7 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
       <div className="card-body p-5 sm:p-6 gap-5">
         <h2 className="card-title text-base">
           <History size={18} />
-          Histórico<span className="badge badge-ghost badge-sm">{events.length}</span>
+          History<span className="badge badge-ghost badge-sm">{events.length}</span>
         </h2>
         {[...events].reverse().map((event) => (
           <article key={event.id} className="border-l-2 border-base-300 pl-4 space-y-2">
@@ -32,7 +32,7 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
                 {event.work ? formatDay(event.work.day) : formatDate(event.occurredAt, timezone)}
               </time>
               {corrected.has(event.id) && (
-                <span className="badge badge-ghost badge-xs">Corrigido</span>
+                <span className="badge badge-ghost badge-xs">Corrected</span>
               )}
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{event.note}</p>
@@ -57,15 +57,15 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
                 {hours(event.effort.minutes)} ·{' '}
                 {
                   {
-                    human_estimated: 'Estimativa humana',
-                    human_measured: 'Humano medido',
-                    agent_run: 'Execução do agente',
-                    wait: 'Espera',
+                    human_estimated: 'Human estimate',
+                    human_measured: 'Measured human time',
+                    agent_run: 'Agent runtime',
+                    wait: 'Waiting',
                   }[event.effort.category]
                 }{' '}
-                · {event.effort.day.split('-').reverse().join('/')}
+                · {formatDay(event.effort.day)}
                 {event.effort.confidence &&
-                  ` · confiança ${{ low: 'baixa', medium: 'média', high: 'alta' }[event.effort.confidence]}`}
+                  ` · confidence ${{ low: 'low', medium: 'medium', high: 'high' }[event.effort.confidence]}`}
               </p>
             )}
             {event.kind === 'context_changed' && (
@@ -86,25 +86,25 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
                 </a>
               ))}
             <details className="text-xs text-base-content/60">
-              <summary className="cursor-pointer">Origem: {event.source.agent}</summary>
+              <summary className="cursor-pointer">Source: {event.source.agent}</summary>
               <dl className="mt-2 space-y-1 break-all">
                 <div>
-                  <dt className="font-medium">ID do registro</dt>
+                  <dt className="font-medium">Record ID</dt>
                   <dd>{event.id}</dd>
                 </div>
                 <div>
-                  <dt className="font-medium">Registrado em</dt>
+                  <dt className="font-medium">Recorded at</dt>
                   <dd>{formatDate(event.recordedAt, timezone)}</dd>
                 </div>
                 {event.correctsEventId && (
                   <div>
-                    <dt className="font-medium">Corrige o registro</dt>
+                    <dt className="font-medium">Corrects record</dt>
                     <dd>{event.correctsEventId}</dd>
                   </div>
                 )}
                 {event.source.chatUrl && (
                   <div>
-                    <dt className="font-medium">Chat de origem</dt>
+                    <dt className="font-medium">Source chat</dt>
                     <dd>{event.source.chatUrl}</dd>
                   </div>
                 )}

@@ -60,12 +60,12 @@ export class AgentManager {
           parse(original || '').mcp_servers as Record<string, { args?: unknown[] }> | undefined
         )?.wid;
         if (original.includes('# wid:begin') && prior && !this.ownedEntry(prior))
-          throw new WorkError('Já existe uma entrada wid de outra instalação.', 409);
+          throw new WorkError('A wid entry from another installation already exists.', 409);
         const clean = original.replace(tomlMarker, '');
         const parsed = parse(clean || '');
         if ((parsed.mcp_servers as Record<string, unknown> | undefined)?.wid)
           throw new WorkError(
-            'Já existe um MCP wid que não pertence a esta instalação. Preserve ou renomeie essa entrada.',
+            'A wid MCP entry that does not belong to this installation already exists. Preserve or rename that entry.',
             409,
           );
         updated = enabled
@@ -144,7 +144,7 @@ export class AgentManager {
     try {
       for (const change of changes) {
         if ((await readOptional(change.path)) !== change.before)
-          throw new WorkError('Configuração alterada por outro processo. Tente novamente.', 409);
+          throw new WorkError('Configuration changed by another process. Try again.', 409);
         await mkdir(dirname(change.path), { recursive: true });
         await atomicWrite(change.path, change.after);
         applied.push(change);

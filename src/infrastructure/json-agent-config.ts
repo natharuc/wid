@@ -18,11 +18,11 @@ export function editServerConfig(
   const errors: ParseError[] = [];
   const tree = parseTree(source, errors, { allowTrailingComma: true });
   if (errors.length || !tree || tree.type !== 'object')
-    throw new WorkError('Configuração MCP inválida. Corrija o arquivo antes de ativar o WID.');
+    throw new WorkError('Invalid MCP configuration. Correct the file before enabling WID.');
   for (let length = 1; length < path.length; length++) {
     const parent = findNodeAtLocation(tree, path.slice(0, length));
     if (parent && parent.type !== 'object')
-      throw new WorkError('Configuração MCP inválida: a seção de servidores deve ser um objeto.');
+      throw new WorkError('Invalid MCP configuration: the servers section must be an object.');
   }
   if (path[0] === 'mcp' && path[1] === 'servers') {
     const root = findNodeAtLocation(tree, ['mcp']);
@@ -34,13 +34,13 @@ export function editServerConfig(
       )
     )
       throw new WorkError(
-        'Este adaptador exige OpenCode 2. Preserve ou migre a configuração MCP antiga antes de ativar o WID.',
+        'This adapter requires OpenCode 2. Preserve or migrate the legacy MCP configuration before enabling WID.',
         409,
       );
   }
   const node = findNodeAtLocation(tree, path);
   if (node && !owned(getNodeValue(node)))
-    throw new WorkError('Já existe uma entrada wid de outra instalação.', 409);
+    throw new WorkError('A wid entry from another installation already exists.', 409);
   if (!node && entry === undefined) return original;
   return applyEdits(
     source,

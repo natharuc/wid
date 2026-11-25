@@ -48,7 +48,7 @@ class SqlWorkUnit implements WorkUnit {
       );
       if (prior.rows.length)
         throw new WorkError(
-          'Este evento já possui correção. Registre uma nota para detalhar.',
+          'This event already has a correction. Record a note for additional details.',
           409,
         );
     }
@@ -88,7 +88,7 @@ export class SqlWorkStore implements WorkStore {
           )
         ).rows[0];
         if (prior.fingerprint !== fingerprint)
-          throw new WorkError('Chave idempotente já usada com conteúdo diferente.', 409);
+          throw new WorkError('Idempotency key already used with different content.', 409);
         return { ...prior.result, task: hydrate(prior.result.task) };
       }
       const result = await action(new SqlWorkUnit(tx));

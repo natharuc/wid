@@ -4,12 +4,12 @@ import { join } from 'node:path';
 import type { AgentId } from './settings.js';
 
 export const agentCatalog: Record<AgentId, { name: string; description: string }> = {
-  codex: { name: 'Codex', description: 'Aplicativo e CLI' },
-  claude: { name: 'Claude Code', description: 'Terminal e extensões' },
+  codex: { name: 'Codex', description: 'App and CLI' },
+  claude: { name: 'Claude Code', description: 'Terminal and extensions' },
   cursor: { name: 'Cursor', description: 'Editor' },
-  copilot: { name: 'GitHub Copilot', description: 'CLI e harness Copilot do VS Code' },
+  copilot: { name: 'GitHub Copilot', description: 'CLI and VS Code Copilot harness' },
   gemini: { name: 'Gemini CLI', description: 'Terminal' },
-  opencode: { name: 'OpenCode', description: 'Versão 2 · terminal e aplicativo' },
+  opencode: { name: 'OpenCode', description: 'Version 2 · terminal and app' },
 };
 export async function exists(path: string) {
   try {
@@ -84,7 +84,7 @@ export async function agentPaths(
     serverPath: ['mcp', 'servers', 'wid'],
     conflict:
       (await exists(json)) && (await exists(jsonc))
-        ? 'OpenCode: existem opencode.json e opencode.jsonc. Consolide a configuração antes de ativar o WID.'
+        ? 'OpenCode: both opencode.json and opencode.jsonc exist. Consolidate the configuration before enabling WID.'
         : undefined,
   };
 }

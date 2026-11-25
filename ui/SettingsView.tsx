@@ -35,9 +35,9 @@ export function AgentsView({
       <section className="card bg-base-100 border border-base-300">
         <div className="card-body p-4 sm:p-6">
           <div className="flex justify-between items-center">
-            <h2 className="card-title text-base">Agentes locais</h2>
+            <h2 className="card-title text-base">Local agents</h2>
             <span className="badge badge-ghost">
-              {agents.filter((agent) => agent.enabled).length} ativos
+              {agents.filter((agent) => agent.enabled).length} enabled
             </span>
           </div>
           <ul className="list">
@@ -47,7 +47,7 @@ export function AgentsView({
                   <div className="bg-white border border-base-300 rounded-box w-12 h-12 p-2">
                     <img
                       src={`/agents/${agent.id}.svg`}
-                      alt={`Logotipo ${agent.name}`}
+                      alt={`Logo: ${agent.name}`}
                       className="w-full h-full object-contain"
                     />
                   </div>
@@ -57,22 +57,22 @@ export function AgentsView({
                   <p className="text-xs text-base-content/60">{agent.description}</p>
                   <p className="text-xs text-base-content/60 mt-1">
                     {agent.rules === 'MCP instructions'
-                      ? 'Orientações fornecidas pelo MCP'
-                      : 'MCP e instruções globais'}
+                      ? 'Instructions provided by MCP'
+                      : 'MCP and global instructions'}
                   </p>
                   <span className="badge badge-ghost badge-xs mt-2">
-                    {agent.detected ? 'Detectado' : 'Não detectado'}
+                    {agent.detected ? 'Detected' : 'Not detected'}
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-base-content/60 hidden sm:inline">
-                    {agent.enabled ? 'Ativo' : 'Inativo'}
+                    {agent.enabled ? 'Enabled' : 'Disabled'}
                   </span>
                   <input
                     type="checkbox"
                     role="switch"
                     className="toggle toggle-primary"
-                    aria-label={`Ativar WID no ${agent.name}`}
+                    aria-label={`Enable WID for ${agent.name}`}
                     checked={agent.enabled}
                     disabled={!!busy}
                     onChange={() => {
@@ -88,9 +88,9 @@ export function AgentsView({
       <div className="alert alert-info alert-soft">
         <Info size={20} />
         <p className="text-sm">
-          Abra uma nova sessão após ativar. O WID configura sua entrada MCP e, quando suportado, as
-          instruções globais. A desativação remove apenas a integração do WID. A ativação dos
-          agentes vale para todos os contextos.
+          Open a new session after enabling an agent. WID configures its MCP entry and, where
+          supported, global instructions. Disabling removes only the WID integration. Agent
+          activation applies to all contexts.
         </p>
       </div>
     </>
@@ -119,7 +119,7 @@ export function SettingsView({
         'PUT',
       );
       await onSaved();
-      setMessage('Configurações salvas.');
+      setMessage('Settings saved.');
     } catch (error) {
       setMessage((error as Error).message);
     } finally {
@@ -130,8 +130,8 @@ export function SettingsView({
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
       <section className="card border border-base-300 bg-base-100 xl:col-span-2">
         <form onSubmit={submit} className="card-body p-4 sm:p-6 gap-4">
-          <h2 className="card-title text-base">Fuso horário</h2>
-          <FormField label="Fuso horário">
+          <h2 className="card-title text-base">Time zone</h2>
+          <FormField label="Time zone">
             <input
               className="input w-full"
               name="timezone"
@@ -140,12 +140,11 @@ export function SettingsView({
             />
           </FormField>
           <p className="text-xs text-base-content/60">
-            O fuso horário vale para todos os contextos. Ferramentas e links são registrados em cada
-            tarefa.
+            The time zone applies to all contexts. Tools and links are recorded on each task.
           </p>
           <div className="card-actions mt-3">
             <button className="btn btn-primary" disabled={busy}>
-              {busy ? 'Salvando…' : 'Salvar alterações'}
+              {busy ? 'Saving…' : 'Save changes'}
             </button>
           </div>
           {message && (
@@ -157,19 +156,19 @@ export function SettingsView({
       </section>
       <aside className="card border border-base-300 bg-base-100">
         <div className="card-body p-4 sm:p-6 gap-4">
-          <h2 className="card-title text-base">Exportar histórico</h2>
+          <h2 className="card-title text-base">Export history</h2>
           <p className="text-sm text-base-content/60">
-            Tarefas, eventos, fontes, horários e estimativas em JSON.
+            Tasks, events, sources, timestamps and estimates in JSON.
           </p>
           <a href={`/api/export${contextQuery(context)}`} download className="btn btn-outline">
             <Download size={16} />
-            Exportar JSON
+            Export JSON
           </a>
           <div className="divider my-1" />
-          <h3 className="font-medium text-sm">Cobertura parcial</h3>
+          <h3 className="font-medium text-sm">Partial coverage</h3>
           <p className="text-sm text-base-content/60">
-            Dias sem registros têm tempo desconhecido. Execução de agentes e espera ficam fora das
-            horas humanas.
+            Days without records have unknown work time. Agent runtime and waiting are excluded from
+            human work time.
           </p>
         </div>
       </aside>

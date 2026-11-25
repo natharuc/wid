@@ -14,6 +14,7 @@ This is a personal, generic local product. Do not classify it as corporate work 
 - No raw transcript ingestion, telemetry, credentials in records, public network listeners or unrequested integration writes.
 - Only modify managed WID entries/blocks in client configuration. Preserve other settings and refuse ownership conflicts. Test config edits with temporary homes, never the developer's actual files.
 - Use concise factual UI copy. No promotional text or filler subtitles.
+- Use English for project-owned documentation, interface text, CLI/MCP messages, validation errors, comments, examples and new identifiers. Preserve the original language of stored user content and external names/identifiers. Keep the legacy `OUTROS` context token compatible; it is stored grouping data, not interface copy.
 - Agents record work. The dashboard is for summaries, evidence and tracking; no task creation/update forms or manual logging CTAs in the user flow. Technical settings remain available.
 - Use React with DaisyUI components and the built-in corporate (light) and business (dark) themes. Layout uses Tailwind utilities. Do not write custom CSS rules, inline styles, handcrafted themes, or a second UI framework. `ui/framework.css` only loads/configures Tailwind and DaisyUI.
 - The primary local checkout is `C:\nac\wid`. Brand masters are in `brand/`; use graphite on light backgrounds and white on dark backgrounds. Preserve the supplied shapes, proportions and clear space. React imports master SVGs directly; prepared web/app icons are served from `ui/public`.

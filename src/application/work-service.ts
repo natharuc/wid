@@ -71,7 +71,7 @@ export class WorkService {
       this.hash({ action: 'record', data, source }),
       async (unit) => {
         const task = await unit.task(data.taskId);
-        if (!task) throw new WorkError('Tarefa não encontrada.', 404);
+        if (!task) throw new WorkError('Task not found.', 404);
         const now = this.now();
         const occurredAt = data.occurredAt ?? now;
         this.validateTime(occurredAt, now);
@@ -86,17 +86,17 @@ export class WorkService {
         if (data.correctsEventId) {
           const original = await unit.event(data.correctsEventId);
           if (!original || original.taskId !== task.id)
-            throw new WorkError('O evento corrigido deve pertencer à tarefa.');
+            throw new WorkError('The corrected event must belong to the task.');
           // Corrections are append-only annotations and replacement effort, never silent status rewrites.
           if (original.kind === 'corrected')
-            throw new WorkError('Corrija o evento original, não outra correção.');
+            throw new WorkError('Correct the original event, not another correction.');
           if (original.work && !data.work && !data.effort)
             throw new WorkError(
-              'Para corrigir um fato estruturado, envie a substituição em work com o dia factual e as evidências.',
+              'To correct a structured fact, provide replacement work with the factual day and evidence.',
             );
         }
         if (data.kind === 'historical_note' && Date.parse(occurredAt) > Date.parse(now))
-          throw new WorkError('Anotação histórica exige um horário já ocorrido.');
+          throw new WorkError('A historical note requires a past timestamp.');
         task.status = nextStatus(task.status, data.kind);
         const previousContext = task.context;
         if (data.kind === 'context_changed') task.context = data.context!;
@@ -143,15 +143,12 @@ export class WorkService {
   async detail(id: string, timezone: string, context?: string) {
     const task = await this.store.task(id);
     if (!task || (context && contextKey(task.context) !== contextKey(context)))
-      throw new WorkError(
-        context ? 'Tarefa não encontrada neste contexto.' : 'Tarefa não encontrada.',
-        404,
-      );
+      throw new WorkError(context ? 'Task not found in this context.' : 'Task not found.', 404);
     return taskReport(task, await this.store.events(id), timezone);
   }
   private validateTime(value: string, now: string) {
     if (Date.parse(value) > Date.parse(now) + 300_000)
-      throw new WorkError('Use um horário ocorrido; registre intenções futuras na descrição.');
+      throw new WorkError('Use a past timestamp; describe future intentions in the note.');
   }
   private hash(value: unknown) {
     return createHash('sha256').update(JSON.stringify(value)).digest('hex');

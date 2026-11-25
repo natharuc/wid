@@ -1,8 +1,8 @@
 {
   "name": "WID — What I Did",
   "short_name": "WID",
-  "description": "Registro local de tarefas e dedicação humana.",
-  "lang": "pt-BR",
+  "description": "Local task and human work journal.",
+  "lang": "en",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

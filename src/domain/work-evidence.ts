@@ -4,7 +4,7 @@ import { isCalendarDay } from './time.js';
 export const calendarDaySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine(isCalendarDay, 'Data inválida');
+  .refine(isCalendarDay, 'Invalid date');
 const instant = z.string().datetime({ offset: true });
 export const workOutcomes = ['planned', 'advanced', 'delivered', 'blocked', 'cancelled'] as const;
 export const workActors = ['human', 'agent', 'joint', 'unknown'] as const;
@@ -40,7 +40,7 @@ export const workEvidenceSchema = z
     if (value.occurredAt && value.day)
       ctx.addIssue({
         code: 'custom',
-        message: 'Informe o instante original ou apenas o dia da evidência, não ambos.',
+        message: 'Provide the original timestamp or the evidence day, not both.',
       });
   });
 export const workEpisodeSchema = z
@@ -57,7 +57,7 @@ export const workEpisodeSchema = z
       .strict()
       .refine(
         (value) => Date.parse(value.startedAt) <= Date.parse(value.endedAt),
-        'Janela de observação inválida.',
+        'Invalid observation window.',
       )
       .optional()
       .describe(
@@ -88,7 +88,7 @@ export const structuredWorkSchema = z
     if (new Set(value.evidence.map((item) => item.id)).size !== value.evidence.length)
       ctx.addIssue({
         code: 'custom',
-        message: 'IDs de evidência devem ser únicos no registro.',
+        message: 'Evidence IDs must be unique within a record.',
         path: ['evidence'],
       });
     if (
@@ -97,7 +97,7 @@ export const structuredWorkSchema = z
     )
       ctx.addIssue({
         code: 'custom',
-        message: 'Autoria humana exige evidência de participação humana.',
+        message: 'Human attribution requires evidence of human participation.',
         path: ['actor'],
       });
   });

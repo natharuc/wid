@@ -50,7 +50,7 @@ export const effortSchema = z
     if (value.category === 'human_estimated' && !value.confidence)
       ctx.addIssue({
         code: 'custom',
-        message: 'Estimativas exigem grau de confiança',
+        message: 'Estimates require a confidence level',
         path: ['confidence'],
       });
   });
@@ -65,7 +65,7 @@ export const contextSchema = z
   .min(1)
   .max(120)
   .describe(
-    'Free-form work context chosen by the agent, e.g. MAG, POLLARIS, SEDUCAO or any other name. Reuse wid_list_contexts names when appropriate; there is no fixed catalog. Separate from company/project.',
+    'Free-form work context chosen by the agent, e.g. Personal, Research, Product or any other name. Reuse wid_list_contexts names when appropriate; there is no fixed catalog. Separate from company/project.',
   );
 export const createSchema = z
   .object({
@@ -90,7 +90,7 @@ export const createSchema = z
       ctx.addIssue({
         code: 'custom',
         message:
-          'A criação registra uma intenção. Use outcome planned e registre realizações em eventos posteriores.',
+          'Creation records an intention. Use outcome planned and record results in later events.',
         path: ['work', 'outcome'],
       });
   });
@@ -111,25 +111,25 @@ export const recordSchema = z
     if (value.kind === 'work_recorded' && !value.work)
       ctx.addIssue({
         code: 'custom',
-        message: 'work_recorded exige resumo e evidências em work.',
+        message: 'work_recorded requires a summary and evidence in work.',
         path: ['work'],
       });
     if (value.work && ['effort', 'context_changed', 'references_added'].includes(value.kind))
       ctx.addIssue({
         code: 'custom',
-        message: 'Registros administrativos não contêm realizações de trabalho.',
+        message: 'Administrative records cannot contain work results.',
         path: ['work'],
       });
     if (value.work && value.effort)
       ctx.addIssue({
         code: 'custom',
-        message: 'Registre esforço separadamente das evidências de trabalho.',
+        message: 'Record effort separately from work evidence.',
         path: ['effort'],
       });
     if (value.kind === 'work_recorded' && value.effort)
       ctx.addIssue({
         code: 'custom',
-        message: 'work_recorded não registra dedicação humana.',
+        message: 'work_recorded does not record human effort.',
         path: ['effort'],
       });
     const expectedOutcome = { completed: 'delivered', blocked: 'blocked', cancelled: 'cancelled' }[
@@ -138,11 +138,11 @@ export const recordSchema = z
     if (value.work && expectedOutcome && value.work.outcome !== expectedOutcome)
       ctx.addIssue({
         code: 'custom',
-        message: 'Resultado incompatível com o tipo do evento.',
+        message: 'The outcome does not match the event kind.',
         path: ['work', 'outcome'],
       });
     if (value.kind === 'references_added' && !value.references?.length)
-      ctx.addIssue({ code: 'custom', message: 'Informe as referências.', path: ['references'] });
+      ctx.addIssue({ code: 'custom', message: 'Provide the references.', path: ['references'] });
     if (
       !['references_added', 'historical_note'].includes(value.kind) &&
       !value.work &&
@@ -150,30 +150,31 @@ export const recordSchema = z
     )
       ctx.addIssue({
         code: 'custom',
-        message: 'Use references_added ou historical_note para registrar referências.',
+        message: 'Use references_added or historical_note to record references.',
         path: ['references'],
       });
     if (value.kind === 'historical_note') {
       if (!value.occurredAt)
         ctx.addIssue({
           code: 'custom',
-          message: 'Anotação histórica exige occurredAt com o horário original e offset.',
+          message:
+            'A historical note requires occurredAt with the original timestamp and UTC offset.',
           path: ['occurredAt'],
         });
       if (value.effort)
         ctx.addIssue({
           code: 'custom',
           message:
-            'Anotação histórica não registra tempo. Use os registros de esforço separados quando houver evidência.',
+            'A historical note does not record time. Use separate effort records when supported by evidence.',
           path: ['effort'],
         });
     }
     if (value.kind === 'context_changed' && !value.context)
-      ctx.addIssue({ code: 'custom', message: 'Informe o novo contexto.', path: ['context'] });
+      ctx.addIssue({ code: 'custom', message: 'Provide the new context.', path: ['context'] });
     if (value.kind !== 'context_changed' && value.context)
       ctx.addIssue({
         code: 'custom',
-        message: 'Use context_changed para alterar o contexto.',
+        message: 'Use context_changed to change the context.',
         path: ['context'],
       });
     if (value.kind === 'corrected' && !value.correctsEventId)
@@ -215,7 +216,7 @@ export function addReferences(
 ): Task['references'] {
   const links = new Map(current.map((ref) => [ref.url, ref]));
   for (const ref of added) if (!links.has(ref.url)) links.set(ref.url, ref);
-  if (links.size > 20) throw new WorkError('A tarefa aceita no máximo 20 referências.');
+  if (links.size > 20) throw new WorkError('A task supports at most 20 references.');
   return [...links.values()];
 }
 export interface WorkEvent {
@@ -243,7 +244,7 @@ export function nextStatus(current: Status, kind: WorkEvent['kind']): Status {
     (current === 'completed' || current === 'cancelled') &&
     ['started', 'progressed', 'blocked', 'completed', 'cancelled'].includes(kind)
   ) {
-    throw new WorkError('Tarefa encerrada. Registre uma nota ou crie uma nova tarefa.');
+    throw new WorkError('Task is closed. Record a note or create a new task.');
   }
   return (
     (
@@ -314,7 +315,7 @@ export function monthReport(
   timezone: string,
   today = localDay(new Date().toISOString(), timezone),
 ) {
-  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new WorkError('Use o mês no formato AAAA-MM.');
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new WorkError('Use YYYY-MM for the month.');
   const [year, index] = month.split('-').map(Number);
   const days = Array.from({ length: new Date(Date.UTC(year, index, 0)).getUTCDate() }, (_, i) =>
     summarize(events, `${month}-${String(i + 1).padStart(2, '0')}`, timezone),
@@ -330,7 +331,7 @@ export function monthReport(
     daysWithoutTime: days.filter((day) => day.events > 0 && !day.humanMinutes).length,
     warnings: days
       .filter((day) => day.humanMinutes > 1440)
-      .map((day) => `${day.day}: totais acima de 24h; revise sobreposição entre tarefas.`),
+      .map((day) => `${day.day}: totals exceed 24 hours; review overlapping tasks.`),
     coverage: 'partial',
   };
 }

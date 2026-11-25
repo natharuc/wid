@@ -22,33 +22,33 @@ export async function api<T>(path: string, body?: unknown, method = 'POST'): Pro
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const result = await response.json();
-  if (!response.ok) throw new Error(result.error ?? 'Não foi possível salvar.');
+  if (!response.ok) throw new Error(result.error ?? 'The request could not be completed.');
   return result as T;
 }
 export const hours = (minutes: number) =>
-  `${Math.floor(minutes / 60)}h${Math.round(minutes % 60)
+  `${Math.floor(minutes / 60)}h ${Math.round(minutes % 60)
     .toString()
-    .padStart(2, '0')}`;
+    .padStart(2, '0')}m`;
 export const statusLabel: Record<Task['status'], string> = {
-  planned: 'Planejada',
-  active: 'Em andamento',
-  blocked: 'Bloqueada',
-  completed: 'Concluída',
-  cancelled: 'Cancelada',
+  planned: 'Planned',
+  active: 'In progress',
+  blocked: 'Blocked',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
 };
 export const kindLabel: Record<WorkEvent['kind'], string> = {
-  planned: 'Intenção registrada',
-  started: 'Trabalho iniciado',
-  progressed: 'Avanço registrado',
-  blocked: 'Bloqueio',
-  decided: 'Decisão',
-  completed: 'Tarefa concluída',
-  cancelled: 'Tarefa cancelada',
-  effort: 'Tempo registrado',
-  corrected: 'Correção',
-  context_changed: 'Contexto alterado',
-  references_added: 'Referências adicionadas',
-  historical_note: 'Anotação histórica',
-  work_recorded: 'Trabalho registrado',
+  planned: 'Intention recorded',
+  started: 'Work started',
+  progressed: 'Progress recorded',
+  blocked: 'Blocker',
+  decided: 'Decision',
+  completed: 'Task completed',
+  cancelled: 'Task cancelled',
+  effort: 'Time recorded',
+  corrected: 'Correction',
+  context_changed: 'Context changed',
+  references_added: 'References added',
+  historical_note: 'Historical note',
+  work_recorded: 'Work recorded',
 };
 export type { Settings, Task, WorkEvent };

@@ -18,11 +18,11 @@ import {
   X,
 } from 'lucide-react';
 const navigation = [
-  { id: 'day', title: 'Resumo diário', icon: LayoutList },
-  { id: 'tasks', title: 'Tarefas', icon: CheckSquare2 },
-  { id: 'month', title: 'Relatório mensal', icon: CalendarDays },
-  { id: 'agents', title: 'Agentes', icon: Bot },
-  { id: 'settings', title: 'Configurações', icon: Settings2 },
+  { id: 'day', title: 'Daily summary', icon: LayoutList },
+  { id: 'tasks', title: 'Tasks', icon: CheckSquare2 },
+  { id: 'month', title: 'Monthly report', icon: CalendarDays },
+  { id: 'agents', title: 'Agents', icon: Bot },
+  { id: 'settings', title: 'Settings', icon: Settings2 },
 ] as const;
 export function Shell({
   page,
@@ -41,7 +41,7 @@ export function Shell({
   const { dark, changeTheme } = useTheme();
   const scope = useWorkContext();
   const title =
-    page === 'task' ? 'Detalhes da tarefa' : navigation.find((item) => item.id === page)!.title;
+    page === 'task' ? 'Task details' : navigation.find((item) => item.id === page)!.title;
   return (
     <div className="drawer lg:drawer-open">
       <input
@@ -50,23 +50,23 @@ export function Shell({
         className="drawer-toggle"
         checked={menuOpen}
         onChange={(event) => setMenuOpen(event.target.checked)}
-        aria-label="Menu de navegação"
+        aria-label="Navigation menu"
       />
       <div className="drawer-content min-w-0 min-h-screen bg-base-200">
         <header className="navbar flex-wrap border-b border-base-300 bg-base-100 px-4 md:px-8 gap-3">
           <button
             className="btn btn-square btn-ghost lg:hidden"
-            aria-label="Abrir menu"
+            aria-label="Open menu"
             onClick={() => setMenuOpen(true)}
           >
             <Menu size={20} />
           </button>
-          <a href={scope.href('/')} aria-label="WID início" className="lg:hidden">
+          <a href={scope.href('/')} aria-label="WID home" className="lg:hidden">
             <Brand dark={dark} compact />
           </a>
           <div className="order-last w-full sm:order-none sm:w-auto sm:flex-1">
             <label className="flex items-center gap-3 min-w-0">
-              <span className="text-xs text-base-content/60">Contexto</span>
+              <span className="text-xs text-base-content/60">Context</span>
               <ContextFilter contexts={contexts} value={scope.context} onChange={scope.select} />
             </label>
           </div>
@@ -86,25 +86,25 @@ export function Shell({
         </main>
       </div>
       <aside className="drawer-side z-40">
-        <label htmlFor="navigation" aria-label="Fechar menu" className="drawer-overlay" />
+        <label htmlFor="navigation" aria-label="Close menu" className="drawer-overlay" />
         <div className="flex min-h-full w-60 flex-col border-r border-base-300 bg-base-100">
           <div className="flex items-center justify-between px-6 py-6">
             <a
               href={scope.href('/')}
-              aria-label="WID início"
+              aria-label="WID home"
               className="flex items-center gap-2 text-xl font-bold"
             >
               <Brand dark={dark} />
             </a>
             <button
               className="btn btn-ghost btn-square btn-sm lg:hidden"
-              aria-label="Fechar menu"
+              aria-label="Close menu"
               onClick={() => setMenuOpen(false)}
             >
               <X size={18} />
             </button>
           </div>
-          <nav aria-label="Principal" className="px-3">
+          <nav aria-label="Main navigation" className="px-3">
             <ul className="menu w-full gap-1">
               {navigation.map((item) => (
                 <li key={item.id}>
@@ -128,7 +128,7 @@ export function Shell({
           <div className="mt-auto p-5 space-y-3 text-xs text-base-content/60">
             <div className="flex items-center gap-2">
               <CircleDot size={13} className="text-success" />
-              PostgreSQL local
+              Local PostgreSQL
             </div>
             <a
               href="https://github.com/natharuc/wid"
