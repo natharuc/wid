@@ -45,5 +45,6 @@ export const kindLabel: Record<WorkEvent['kind'], string> = {
   effort: 'Tempo registrado',
   corrected: 'Correção',
   context_changed: 'Contexto alterado',
+  references_added: 'Referências adicionadas',
 };
 export type { Settings, Task, WorkEvent };

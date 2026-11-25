@@ -57,7 +57,7 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_record_event',
     {
       description:
-        'Append progress, decision, blocker, completion, correction or cumulative task/day effort. To assign/change a task context, use kind=context_changed and a free-form context; this regroups all its history and preserves an audit event. Effort snapshots replace prior same task/day/category totals. Human measured minutes require explicit user measurement.',
+        'Append progress, decision, blocker, completion, correction or cumulative task/day effort. Add external links to an existing task with kind=references_added and references=[{label,url}]; use actual URLs to Azure DevOps, GitHub, Slack or chats, without recreating the task. To assign/change context, use kind=context_changed and context; this regroups all history and preserves an audit event. Effort snapshots replace prior same task/day/category totals. Human measured minutes require explicit user measurement.',
       inputSchema: { ...recordSchema.shape, ...identity },
     },
     (input) =>

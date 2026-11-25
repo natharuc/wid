@@ -37,6 +37,119 @@ test('create is atomic and retries are idempotent, including concurrent calls', 
     /conteúdo diferente/,
   );
 });
+
+test('task detail isolates full history across months and preserves cumulative human accounting', async () => {
+  const { task } = await work.create(
+    { title: 'Detail totals', context: 'Free context', idempotencyKey: randomUUID() },
+    identity,
+  );
+  for (const [day, category, minutes] of [
+    ['2026-10-31', 'human_estimated', 30],
+    ['2026-11-24', 'human_estimated', 40],
+    ['2026-11-24', 'human_estimated', 60],
+    ['2026-11-24', 'human_measured', 20],
+    ['2026-11-24', 'agent_run', 300],
+    ['2026-11-24', 'wait', 90],
+  ] as const)
+    await work.record(
+      {
+        taskId: task.id,
+        kind: 'effort',
+        note: 'Synthetic effort',
+        effort: { day, category, minutes, confidence: 'low' },
+        idempotencyKey: randomUUID(),
+      },
+      identity,
+    );
+  const detail = await work.detail(task.id, 'America/Sao_Paulo');
+  assert.equal(detail.task.context, 'Free context');
+  assert.equal(detail.events.length, 7);
+  assert.ok(detail.events.every((event) => event.taskId === task.id));
+  assert.deepEqual(detail.totals, {
+    humanMinutes: 90,
+    measuredMinutes: 20,
+    estimatedMinutes: 70,
+    agentMinutes: 300,
+    waitMinutes: 90,
+  });
+  assert.deepEqual(
+    detail.days.map((day) => day.day),
+    ['2026-11-25', '2026-11-24', '2026-10-31'],
+  );
+  assert.equal(detail.daysWithoutTime, 1);
+  await work.record(
+    {
+      taskId: task.id,
+      kind: 'effort',
+      note: 'Explicit zero measurement',
+      effort: { day: '2026-11-25', category: 'human_measured', minutes: 0 },
+      idempotencyKey: randomUUID(),
+    },
+    identity,
+  );
+  const zero = await work.detail(task.id, 'America/Sao_Paulo');
+  assert.equal(zero.days[0].humanTimeRecorded, true);
+  assert.equal(zero.daysWithoutTime, 0);
+  await assert.rejects(work.detail(randomUUID(), 'America/Sao_Paulo'), /não encontrada/);
+});
+
+test('adding references is audited, idempotent and works on completed tasks without duplicating them', async () => {
+  const ref = { label: 'Issue', url: 'https://github.com/example/project/issues/1' };
+  const { task } = await work.create(
+    { title: 'References', references: [ref], idempotencyKey: randomUUID() },
+    identity,
+  );
+  await work.record(
+    { taskId: task.id, kind: 'completed', note: 'Done', idempotencyKey: randomUUID() },
+    identity,
+  );
+  const input = {
+    taskId: task.id,
+    kind: 'references_added',
+    references: [ref, { label: 'Discussion', url: 'https://example.slack.com/archives/C1/p123' }],
+    note: 'Link to existing discussion',
+    idempotencyKey: randomUUID(),
+  };
+  const added = await work.record(input, identity);
+  assert.equal(added.task.id, task.id);
+  assert.equal(added.task.status, 'completed');
+  assert.equal(added.task.references.length, 2);
+  assert.equal(added.event.references?.length, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(added)), await work.record(input, identity));
+  await assert.rejects(
+    work.record({ ...input, references: undefined, idempotencyKey: randomUUID() }, identity),
+  );
+  await assert.rejects(
+    work.record({ ...input, kind: 'progressed', idempotencyKey: randomUUID() }, identity),
+  );
+  await assert.rejects(
+    work.record(
+      {
+        ...input,
+        references: [{ label: 'Unsafe', url: 'javascript:alert(1)' }],
+        idempotencyKey: randomUUID(),
+      },
+      identity,
+    ),
+  );
+  await assert.rejects(
+    work.record(
+      {
+        ...input,
+        references: Array.from({ length: 20 }, (_, i) => ({
+          label: `Ref ${i}`,
+          url: `https://example.com/${i}`,
+        })),
+        idempotencyKey: randomUUID(),
+      },
+      identity,
+    ),
+    /máximo 20/,
+  );
+  const detail = await work.detail(task.id, 'America/Sao_Paulo');
+  assert.equal(detail.task.references.length, 2);
+  assert.equal(detail.events.length, 3);
+});
 test('state transition failure rolls back its event and idempotency claim', async () => {
   const { task } = await work.create(
     { title: 'Finish task', idempotencyKey: randomUUID() },

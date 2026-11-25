@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { History, ListTodo, Plus, Search } from 'lucide-react';
 import { localDay } from '../src/domain/time';
-import { statusLabel, type DayReport, type Snapshot, type Task } from './api';
+import { statusLabel, type DayReport, type Snapshot } from './api';
 import { TaskRow, TimelineEvent } from './WorkComponents';
 import { contextKey, summarizeContexts } from '../src/domain/context';
 export function ActivityView({
@@ -10,7 +10,6 @@ export function ActivityView({
   snapshot,
   daily,
   timezone,
-  onSelect,
   onNew,
 }: {
   page: 'day' | 'tasks';
@@ -18,7 +17,6 @@ export function ActivityView({
   snapshot: Snapshot;
   daily?: DayReport;
   timezone: string;
-  onSelect: (task: Task) => void;
   onNew: () => void;
 }) {
   const [query, setQuery] = useState('');
@@ -79,15 +77,12 @@ export function ActivityView({
                     <th>Tarefa</th>
                     <th>Estado</th>
                     {page === 'day' && <th className="text-right">Horas</th>}
-                    <th>
-                      <span className="sr-only">Atualizar</span>
-                    </th>
                   </tr>
                 </thead>
                 {summarizeContexts(tasks).map((group) => (
                   <tbody key={contextKey(group.name)}>
                     <tr className="bg-base-200/50">
-                      <th colSpan={page === 'day' ? 4 : 3} scope="rowgroup">
+                      <th colSpan={page === 'day' ? 3 : 2} scope="rowgroup">
                         <span className="font-semibold">{group.name}</span>
                         <span className="badge badge-ghost badge-xs ml-2">{group.taskCount}</span>
                       </th>
@@ -100,7 +95,6 @@ export function ActivityView({
                           task={task}
                           time={daily?.taskMinutes[task.id]?.humanMinutes}
                           showTime={page === 'day'}
-                          onSelect={() => onSelect(task)}
                         />
                       ))}
                   </tbody>
@@ -140,13 +134,7 @@ export function ActivityView({
                 {[...events].reverse().map((event) => {
                   const task = snapshot.tasks.find((task) => task.id === event.taskId);
                   return (
-                    <TimelineEvent
-                      key={event.id}
-                      event={event}
-                      task={task}
-                      timezone={timezone}
-                      onSelect={() => task && onSelect(task)}
-                    />
+                    <TimelineEvent key={event.id} event={event} task={task} timezone={timezone} />
                   );
                 })}
               </div>

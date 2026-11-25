@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from './useTheme';
 import { Brand } from './Brand';
+import { pagePaths, type Page } from './navigation';
 import {
   ArrowUpRight,
   Bot,
@@ -14,7 +15,6 @@ import {
   Settings2,
   X,
 } from 'lucide-react';
-export type Page = 'day' | 'tasks' | 'month' | 'agents' | 'settings';
 const navigation = [
   { id: 'day', title: 'Visão diária', icon: LayoutList },
   { id: 'tasks', title: 'Tarefas', icon: CheckSquare2 },
@@ -24,14 +24,12 @@ const navigation = [
 ] as const;
 export function Shell({
   page,
-  setPage,
   taskCount,
   timezone,
   newTask,
   children,
 }: {
   page: Page;
-  setPage: (page: Page) => void;
   taskCount: number;
   timezone: string;
   newTask: () => void;
@@ -39,11 +37,8 @@ export function Shell({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { dark, changeTheme } = useTheme();
-  const title = navigation.find((item) => item.id === page)!.title;
-  const navigate = (value: Page) => {
-    setPage(value);
-    setMenuOpen(false);
-  };
+  const title =
+    page === 'task' ? 'Detalhes da tarefa' : navigation.find((item) => item.id === page)!.title;
   return (
     <div className="drawer lg:drawer-open">
       <input
@@ -84,10 +79,12 @@ export function Shell({
         <main className="mx-auto max-w-screen-2xl p-4 md:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold">{title}</h1>
-            <button className="btn btn-primary" onClick={newTask}>
-              <Plus size={18} />
-              Nova tarefa
-            </button>
+            {page !== 'task' && (
+              <button className="btn btn-primary" onClick={newTask}>
+                <Plus size={18} />
+                Nova tarefa
+              </button>
+            )}
           </div>
           {children}
         </main>
@@ -115,17 +112,19 @@ export function Shell({
             <ul className="menu w-full gap-1">
               {navigation.map((item) => (
                 <li key={item.id}>
-                  <button
-                    onClick={() => navigate(item.id)}
-                    className={page === item.id ? 'menu-active' : ''}
-                    aria-current={page === item.id ? 'page' : undefined}
+                  <a
+                    href={pagePaths[item.id]}
+                    className={(page === 'task' ? 'tasks' : page) === item.id ? 'menu-active' : ''}
+                    aria-current={
+                      (page === 'task' ? 'tasks' : page) === item.id ? 'page' : undefined
+                    }
                   >
                     <item.icon size={18} />
                     {item.title}
                     {item.id === 'tasks' && (
                       <span className="badge badge-sm badge-ghost ml-auto">{taskCount}</span>
                     )}
-                  </button>
+                  </a>
                 </li>
               ))}
             </ul>

@@ -13,5 +13,6 @@ export interface WorkStore {
     action: (unit: WorkUnit) => Promise<CommandResult>,
   ): Promise<CommandResult>;
   tasks(): Promise<Task[]>;
-  events(): Promise<WorkEvent[]>;
+  task(id: string): Promise<Task | undefined>;
+  events(taskId?: string): Promise<WorkEvent[]>;
 }

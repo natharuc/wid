@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { localDay } from './time.js';
+import { localDay, isCalendarDay } from './time.js';
 export { localDay } from './time.js';
 
 export const eventKinds = [
@@ -13,6 +13,7 @@ export const eventKinds = [
   'effort',
   'corrected',
   'context_changed',
+  'references_added',
 ] as const;
 export const statuses = ['planned', 'active', 'blocked', 'completed', 'cancelled'] as const;
 export type Status = (typeof statuses)[number];
@@ -36,11 +37,7 @@ export const referenceSchema = z.object({
 export const daySchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine(
-    (value) =>
-      !Number.isNaN(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value,
-    'Data inválida',
-  );
+  .refine(isCalendarDay, 'Data inválida');
 export const effortSchema = z
   .object({
     category: z.enum(['human_measured', 'human_estimated', 'agent_run', 'wait']),
@@ -73,7 +70,13 @@ export const createSchema = z.object({
   title: z.string().trim().min(1).max(240),
   company: z.string().trim().max(100).default(''),
   project: z.string().trim().max(120).default(''),
-  references: z.array(referenceSchema).max(20).default([]),
+  references: z
+    .array(referenceSchema)
+    .max(20)
+    .default([])
+    .describe(
+      'Optional links to the actual work item, GitHub issue/PR, Azure DevOps, Slack or chat. Provide a short descriptive label and the real URL; never invent a link.',
+    ),
   note: text.optional(),
   occurredAt: z.string().datetime({ offset: true }).optional(),
   idempotencyKey: z.string().min(1).max(200),
@@ -89,8 +92,17 @@ export const recordSchema = z
     correctsEventId: z.string().uuid().optional(),
     idempotencyKey: z.string().min(1).max(200),
     context: contextSchema.optional(),
+    references: z.array(referenceSchema).min(1).max(20).optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.kind === 'references_added' && !value.references)
+      ctx.addIssue({ code: 'custom', message: 'Informe as referências.', path: ['references'] });
+    if (value.kind !== 'references_added' && value.references)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Use references_added para adicionar referências.',
+        path: ['references'],
+      });
     if (value.kind === 'context_changed' && !value.context)
       ctx.addIssue({ code: 'custom', message: 'Informe o novo contexto.', path: ['context'] });
     if (value.kind !== 'context_changed' && value.context)
@@ -132,6 +144,15 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
+export function addReferences(
+  current: Task['references'],
+  added: Task['references'],
+): Task['references'] {
+  const links = new Map(current.map((ref) => [ref.url, ref]));
+  for (const ref of added) if (!links.has(ref.url)) links.set(ref.url, ref);
+  if (links.size > 20) throw new WorkError('A tarefa aceita no máximo 20 referências.');
+  return [...links.values()];
+}
 export interface WorkEvent {
   id: string;
   taskId: string;
@@ -144,6 +165,7 @@ export interface WorkEvent {
   correctsEventId?: string;
   context?: string;
   previousContext?: string;
+  references?: Task['references'];
 }
 export interface CommandResult {
   task: Task;
@@ -208,6 +230,10 @@ export function summarize(events: WorkEvent[], day: string, timezone: string) {
     tasks: new Set(daily.map((event) => event.taskId)).size,
     minutes,
     humanMinutes: minutes.human_measured + minutes.human_estimated,
+    humanTimeRecorded: [...latest.values()].some(
+      (event) =>
+        event.effort?.category === 'human_measured' || event.effort?.category === 'human_estimated',
+    ),
     taskMinutes: Object.fromEntries(
       [...taskMinutes].map(([id, value]) => [
         id,
@@ -228,16 +254,7 @@ export function monthReport(
   const days = Array.from({ length: new Date(Date.UTC(year, index, 0)).getUTCDate() }, (_, i) =>
     summarize(events, `${month}-${String(i + 1).padStart(2, '0')}`, timezone),
   );
-  const totals = days.reduce(
-    (sum, day) => ({
-      humanMinutes: sum.humanMinutes + day.humanMinutes,
-      measuredMinutes: sum.measuredMinutes + day.minutes.human_measured,
-      estimatedMinutes: sum.estimatedMinutes + day.minutes.human_estimated,
-      agentMinutes: sum.agentMinutes + day.minutes.agent_run,
-      waitMinutes: sum.waitMinutes + day.minutes.wait,
-    }),
-    { humanMinutes: 0, measuredMinutes: 0, estimatedMinutes: 0, agentMinutes: 0, waitMinutes: 0 },
-  );
+  const totals = totalDays(days);
   return {
     month,
     timezone,
@@ -251,4 +268,16 @@ export function monthReport(
       .map((day) => `${day.day}: totais acima de 24h; revise sobreposição entre tarefas.`),
     coverage: 'partial',
   };
+}
+export function totalDays(days: ReturnType<typeof summarize>[]) {
+  return days.reduce(
+    (sum, day) => ({
+      humanMinutes: sum.humanMinutes + day.humanMinutes,
+      measuredMinutes: sum.measuredMinutes + day.minutes.human_measured,
+      estimatedMinutes: sum.estimatedMinutes + day.minutes.human_estimated,
+      agentMinutes: sum.agentMinutes + day.minutes.agent_run,
+      waitMinutes: sum.waitMinutes + day.minutes.wait,
+    }),
+    { humanMinutes: 0, measuredMinutes: 0, estimatedMinutes: 0, agentMinutes: 0, waitMinutes: 0 },
+  );
 }

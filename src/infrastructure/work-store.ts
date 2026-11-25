@@ -99,10 +99,21 @@ export class SqlWorkStore implements WorkStore {
       )
     ).rows.map((row) => hydrate(row.document));
   }
-  async events() {
+  async task(id: string) {
+    const task = (
+      await this.db.query<{ document: StoredTask }>('SELECT document FROM wid_tasks WHERE id=$1', [
+        id,
+      ])
+    ).rows[0]?.document;
+    return task ? hydrate(task) : undefined;
+  }
+  async events(taskId?: string) {
     return (
       await this.db.query<{ document: WorkEvent }>(
-        'SELECT document FROM wid_events ORDER BY sequence',
+        taskId
+          ? 'SELECT document FROM wid_events WHERE task_id=$1 ORDER BY sequence'
+          : 'SELECT document FROM wid_events ORDER BY sequence',
+        taskId ? [taskId] : [],
       )
     ).rows.map((row) => row.document);
   }

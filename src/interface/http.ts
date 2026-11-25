@@ -98,6 +98,11 @@ export function createApp(options: {
   const queryContext = (req: express.Request) => contextSchema.optional().parse(req.query.context);
   app.get('/api/contexts', async (_req, res) => res.json(await work.contexts()));
   app.get('/api/snapshot', async (req, res) => res.json(await work.snapshot(queryContext(req))));
+  app.get('/api/tasks/:id', async (req, res) =>
+    res.json(
+      await work.detail(z.string().uuid().parse(req.params.id), (await settings.read()).timezone),
+    ),
+  );
   app.get('/api/day/:day', async (req, res) =>
     res.json(await gateway.day(req.params.day, queryContext(req))),
   );
@@ -180,6 +185,9 @@ export function createApp(options: {
   });
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint não encontrado.' }));
   app.use(express.static(resolve(options.webPath)));
+  app.get(['/tasks', '/month', '/agents', '/settings', '/task/:id'], (_req, res) =>
+    res.sendFile(resolve(options.webPath, 'index.html')),
+  );
   app.use(
     (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
       if (error instanceof ZodError)

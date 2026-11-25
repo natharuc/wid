@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -17,6 +17,7 @@ import { createApp } from '../src/interface/http.js';
 test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost protection', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'wid-http-test-'));
   const db = await openDatabase(join(directory, 'pg'));
+  await writeFile(join(directory, 'index.html'), '<!doctype html><title>WID test shell</title>');
   await migrate(db);
   const settings = new SettingsStore(directory);
   await settings.update((current) => ({ ...current, agents: { ...current.agents, codex: true } }));
@@ -68,7 +69,17 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     const created = decode(
       await client.callTool({
         name: 'wid_create_task',
-        arguments: { title: 'MCP test', idempotencyKey: 'mcp-create', sessionId: 'conversation-1' },
+        arguments: {
+          title: 'MCP test',
+          references: [
+            {
+              label: 'Tracking item',
+              url: 'https://dev.azure.com/example/project/_workitems/edit/123',
+            },
+          ],
+          idempotencyKey: 'mcp-create',
+          sessionId: 'conversation-1',
+        },
       }),
     );
     assert.equal(created.event.source.agent, 'codex');
@@ -164,6 +175,32 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     };
     assert.equal(filteredExport.tasks.length, 0);
     assert.equal(filteredExport.events.length, 0);
+    const addedReference = await client.callTool({
+      name: 'wid_record_event',
+      arguments: {
+        taskId: created.task.id,
+        kind: 'references_added',
+        references: [{ label: 'Discussion', url: 'https://example.slack.com/archives/C1/p123' }],
+        note: 'Existing discussion',
+        idempotencyKey: 'add-reference',
+      },
+    });
+    assert.equal(addedReference.isError, undefined);
+    const detail = (await (await fetch(`${url}/api/tasks/${created.task.id}`)).json()) as {
+      task: { references: unknown[] };
+      events: { taskId: string }[];
+      totals: { humanMinutes: number };
+    };
+    assert.equal(detail.task.references.length, 2);
+    assert.equal(detail.totals.humanMinutes, 90);
+    assert.ok(detail.events.every((event) => event.taskId === created.task.id));
+    assert.equal((await fetch(`${url}/api/tasks/${randomUUID()}`)).status, 404);
+    assert.equal((await fetch(`${url}/api/tasks/invalid-id`)).status, 400);
+    const page = await fetch(`${url}/task/${created.task.id}`);
+    assert.equal(page.status, 200);
+    assert.match(await page.text(), /WID test shell/);
+    assert.equal((await fetch(`${url}/tasks`)).status, 200);
+    assert.equal((await fetch(`${url}/assets/missing.js`)).status, 404);
     await settings.update((current) => ({
       ...current,
       agents: { ...current.agents, codex: false },

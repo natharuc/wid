@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import {
   createSchema,
+  addReferences,
   nextStatus,
   recordSchema,
   sourceSchema,
@@ -11,6 +12,7 @@ import {
 } from '../domain/work.js';
 import type { WorkStore } from './ports.js';
 import { contextKey, DEFAULT_CONTEXT, summarizeContexts } from '../domain/context.js';
+import { taskReport } from '../domain/task-report.js';
 
 export class WorkService {
   constructor(
@@ -79,6 +81,9 @@ export class WorkService {
         task.status = nextStatus(task.status, data.kind);
         const previousContext = task.context;
         if (data.kind === 'context_changed') task.context = data.context!;
+        if (data.kind === 'references_added') {
+          task.references = addReferences(task.references, data.references!);
+        }
         task.updatedAt = now;
         const event: WorkEvent = {
           id: randomUUID(),
@@ -91,6 +96,7 @@ export class WorkService {
           effort: data.effort,
           correctsEventId: data.correctsEventId,
           ...(data.kind === 'context_changed' ? { context: task.context, previousContext } : {}),
+          ...(data.kind === 'references_added' ? { references: data.references } : {}),
         };
         await unit.append(event);
         await unit.saveTask(task);
@@ -108,6 +114,11 @@ export class WorkService {
   }
   async contexts() {
     return summarizeContexts(await this.store.tasks());
+  }
+  async detail(id: string, timezone: string) {
+    const task = await this.store.task(id);
+    if (!task) throw new WorkError('Tarefa não encontrada.', 404);
+    return taskReport(task, await this.store.events(id), timezone);
   }
   private validateTime(value: string, now: string) {
     if (Date.parse(value) > Date.parse(now) + 300_000)

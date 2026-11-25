@@ -1,5 +1,6 @@
 import { ArrowUpRight } from 'lucide-react';
 import { hours, kindLabel, statusLabel, type Task, type WorkEvent } from './api';
+import { taskPath } from './navigation';
 const stateClasses: Record<Task['status'], string> = {
   planned: 'badge-ghost',
   active: 'badge-info',
@@ -32,19 +33,17 @@ export function TaskRow({
   task,
   time,
   showTime,
-  onSelect,
 }: {
   task: Task;
   time?: number;
   showTime: boolean;
-  onSelect: () => void;
 }) {
   return (
     <tr className="hover:bg-base-200/50">
       <td className="min-w-40">
-        <button className="link link-hover text-left font-medium" onClick={onSelect}>
+        <a className="link link-hover text-left font-medium" href={taskPath(task.id)}>
           {task.title}
-        </button>
+        </a>
         <p className="text-xs text-base-content/60 mt-1">
           {[task.company, task.project].filter(Boolean).join(' / ') || 'Sem projeto'}
         </p>
@@ -61,16 +60,6 @@ export function TaskRow({
           {time === undefined ? '—' : hours(time)}
         </td>
       )}
-      <td className="text-right">
-        <button
-          className="btn btn-ghost btn-sm"
-          aria-label={`Registrar em ${task.title}`}
-          onClick={onSelect}
-        >
-          Registrar
-          <ArrowUpRight size={14} />
-        </button>
-      </td>
     </tr>
   );
 }
@@ -78,12 +67,10 @@ export function TimelineEvent({
   event,
   task,
   timezone,
-  onSelect,
 }: {
   event: WorkEvent;
   task?: Task;
   timezone: string;
-  onSelect: () => void;
 }) {
   const confidence =
     event.effort?.confidence &&
@@ -128,10 +115,10 @@ export function TimelineEvent({
             {event.previousContext} → {event.context}
           </p>
         )}
-        <button className="btn btn-ghost btn-xs" onClick={onSelect}>
+        <a className="btn btn-ghost btn-xs" href={taskPath(event.taskId)}>
           Abrir tarefa
           <ArrowUpRight size={13} />
-        </button>
+        </a>
         <dl className="text-xs text-base-content/60 space-y-2 break-all">
           <div>
             <dt className="font-medium">ID</dt>

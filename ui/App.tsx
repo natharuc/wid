@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Info, X } from 'lucide-react';
-import { localDay } from '../src/domain/time';
+import { localDay, isCalendarDay } from '../src/domain/time';
 import { type Task } from './api';
 import { WorkDialog } from './WorkDialog';
 import { MonthView } from './MonthView';
 import { DayOverview } from './DayOverview';
 import { ActivityView } from './ActivityView';
 import { AgentsView, SettingsView } from './SettingsView';
-import { Shell, type Page } from './Shell';
+import { Shell } from './Shell';
+import { pageFromPath } from './navigation';
+import { TaskDetailPage } from './TaskDetailPage';
 import { useDashboard } from './useDashboard';
 import { ContextFilter } from './ContextControls';
 import { contextKey, DEFAULT_CONTEXT } from '../src/domain/context';
 export function App() {
-  const [page, setPage] = useState<Page>('day');
-  const [day, setDay] = useState(localDay(new Date().toISOString()));
+  const page = pageFromPath(window.location.pathname);
+  const requestedDay = new URLSearchParams(window.location.search).get('day') ?? '';
+  const [day, setDay] = useState(
+    isCalendarDay(requestedDay) ? requestedDay : localDay(new Date().toISOString()),
+  );
   const [month, setMonth] = useState(day.slice(0, 7));
   const [dialog, setDialog] = useState<Task | 'new' | null>(null);
   const [context, setContext] = useState('');
@@ -38,14 +43,12 @@ export function App() {
   }, [context, contexts, loading]);
   const timezone = settings?.timezone ?? 'America/Sao_Paulo';
   const chooseDay = (day: string) => {
-    setDay(day);
-    setPage('day');
+    window.location.assign(`/?day=${day}`);
   };
   return (
     <>
       <Shell
         page={page}
-        setPage={setPage}
         taskCount={snapshot.tasks.length}
         timezone={timezone}
         newTask={() => setDialog('new')}
@@ -86,7 +89,6 @@ export function App() {
                 snapshot={snapshot}
                 daily={daily}
                 timezone={timezone}
-                onSelect={setDialog}
                 onNew={() => setDialog('new')}
               />
             )}
@@ -105,6 +107,7 @@ export function App() {
             {page === 'settings' && settings && (
               <SettingsView settings={settings} onSaved={reload} />
             )}
+            {page === 'task' && <TaskDetailPage taskId={window.location.pathname.split('/')[2]} />}
           </>
         )}
       </Shell>

@@ -30,7 +30,7 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.3.0 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.4.0 está distribuída pelo GitHub; não está publicada no registro npm.
 
 ### Atualizar a instalação
 
@@ -43,7 +43,7 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.3.0, use `https://github.com/natharuc/wid/releases/download/v0.3.0/wid.tgz`.
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.4.0, use `https://github.com/natharuc/wid/releases/download/v0.4.0/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -119,6 +119,26 @@ Tarefas antigas sem contexto aparecem em `OUTROS`. O agente pode classificá-las
 Essa alteração é registrada no histórico, com contexto anterior e novo. **Todo o histórico e as horas da tarefa passam a ser agrupados pelo contexto atual.** Para consultas de um grupo, envie `context` em `wid_list_tasks`, `wid_report_day` e `wid_report_month`; omita para consultar todos. O MCP e as instruções globais deixam essa escolha explícita. A API continua aceitando clientes antigos sem o campo, usando `OUTROS`; isso é compatibilidade, não uma restrição de catálogo.
 
 ## MCP
+
+### Acompanhar uma tarefa
+
+O título de uma tarefa abre `/task/{id}`: intenção, estado, histórico completo, horas por dia e referências para os sistemas de origem. A URL pode ser aberta diretamente e recarregada. O painel é voltado ao acompanhamento; o agente registra o trabalho pelo MCP.
+
+O campo `references` já existe na criação. Use links reais, quando conhecidos:
+
+```json
+{
+  "title": "Revisar recebimentos",
+  "context": "Cliente A",
+  "note": "Validar o comportamento solicitado e registrar os resultados.",
+  "references": [
+    { "label": "Issue de recebimentos", "url": "https://github.com/organizacao/projeto/issues/123" }
+  ],
+  "idempotencyKey": "session-123:recebimentos"
+}
+```
+
+Para adicionar links posteriormente, `wid_record_event` aceita `kind: "references_added"`, `taskId`, `references: [{label, url}]`, `note` e `idempotencyKey`. A alteração é auditada e não duplica a tarefa. URLs repetidas são consolidadas e a tarefa aceita até 20 referências. O painel identifica links do Azure DevOps, GitHub e Slack; outros destinos usam o rótulo da referência. WID não consulta esses serviços nem envia mensagens ao abri-los.
 
 | Ferramenta | Uso |
 | --- | --- |
