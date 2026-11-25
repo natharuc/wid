@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 import {
   ArrowUpRight,
   Bot,
@@ -66,6 +67,7 @@ export function Shell({
             </ul>
           </div>
           <span className="text-xs text-base-content/60 hidden sm:block">{timezone}</span>
+          <ThemeToggle />
           <span className="badge badge-outline gap-2">
             <span className="status status-success" />
             Local

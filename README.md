@@ -27,7 +27,7 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.2.0 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.2.1 está distribuída pelo GitHub; não está publicada no registro npm.
 
 ### Atualizar a instalação
 
@@ -40,7 +40,7 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.2.0, use `https://github.com/natharuc/wid/releases/download/v0.2.0/wid.tgz`.
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.2.1, use `https://github.com/natharuc/wid/releases/download/v0.2.1/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -54,7 +54,7 @@ npm install -g github:natharuc/wid
 - Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
 - Tempo por **tarefa/dia**, estimado pelo agente com evidência e confiança ou informado pelo usuário.
 - Visão diária, linha do tempo e calendário mensal com cobertura explícita.
-- Interface React com componentes DaisyUI, tema corporate e layout Tailwind; sem CSS próprio.
+- Interface React com componentes DaisyUI, temas corporate (claro) / business (escuro) e layout Tailwind; sem CSS próprio. O seletor de sol/lua no cabeçalho salva a escolha no navegador; na primeira abertura, segue o sistema. O tema é aplicado antes da renderização da interface.
 - MCP local por **stdio** e **Streamable HTTP**, usando o SDK oficial.
 - Detecção e ativação/desativação de Codex, Claude Code e Cursor.
 - Instruções globais gerenciadas para Codex e Claude Code; instruções no MCP para todos.
