@@ -7,6 +7,8 @@ import { TaskHistory, formatDate } from './TaskHistory';
 import { TaskTimeSummary, TaskDayHours } from './TaskTime';
 import { useWorkContext } from './WorkContext';
 import { contextQuery } from './context-scope';
+import { WorkDigestView } from './WorkDigestView';
+import { formatDay } from './workLabels';
 
 export function TaskDetailPage({ taskId }: { taskId: string }) {
   const { context, href } = useWorkContext();
@@ -50,6 +52,10 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
     );
   const { task, events, timezone } = data;
   const intention = events.find((event) => event.kind === 'planned')?.note;
+  const digest =
+    data.digest.find((day) =>
+      day.items.some((item) => item.facts.some((fact) => fact.outcome !== 'planned')),
+    ) ?? data.digest.find((day) => day.items.length > 0);
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -76,23 +82,45 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
         <p className="text-sm text-base-content/60">
           {[task.company, task.project].filter(Boolean).join(' / ') || 'Sem projeto'}
         </p>
-        {intention && intention !== task.title && (
-          <p className="text-sm leading-relaxed whitespace-pre-wrap break-words max-w-4xl">
-            {intention}
-          </p>
-        )}
         <p className="text-xs text-base-content/60">
           Criada em {formatDate(task.createdAt, timezone)} · Atualizada em{' '}
           {formatDate(task.updatedAt, timezone)}
         </p>
       </section>
+      {digest && (
+        <div className="space-y-2">
+          <p className="text-xs text-base-content/60">Resumo de {formatDay(digest.day)}</p>
+          <WorkDigestView
+            digest={digest}
+            events={events}
+            timezone={timezone}
+            title="Resultado e andamento"
+            showTaskLinks={false}
+          />
+        </div>
+      )}
       <TaskTimeSummary data={data} />
       <p className="text-xs text-base-content/60">
         Cobertura parcial. Dias sem registros têm tempo desconhecido.
       </p>
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
         <div className="xl:col-span-2 order-2 xl:order-1">
-          <TaskHistory events={events} timezone={timezone} />
+          <details className="collapse collapse-arrow border border-base-300 bg-base-100">
+            <summary className="collapse-title text-sm font-medium">
+              Histórico completo ({events.length})
+            </summary>
+            <div className="collapse-content space-y-4">
+              {intention && intention !== task.title && (
+                <section className="space-y-2">
+                  <h2 className="font-medium text-sm">Intenção inicial</h2>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                    {intention}
+                  </p>
+                </section>
+              )}
+              <TaskHistory events={events} timezone={timezone} />
+            </div>
+          </details>
         </div>
         <aside className="space-y-6 order-1 xl:order-2">
           <ReferenceLinks references={task.references} />

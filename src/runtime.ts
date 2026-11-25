@@ -65,7 +65,11 @@ export async function runServer(directory: string) {
     const config = await settings.read();
     database = await openDatabase(join(directory, 'postgres'), process.env.WID_DATABASE_URL);
     await migrate(database);
-    const work = new WorkService(new SqlWorkStore(database));
+    const work = new WorkService(
+      new SqlWorkStore(database),
+      undefined,
+      async () => (await settings.read()).timezone,
+    );
     let closing = false;
     const close = async () => {
       if (closing) return;

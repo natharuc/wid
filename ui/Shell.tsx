@@ -14,12 +14,11 @@ import {
   CircleDot,
   LayoutList,
   Menu,
-  Plus,
   Settings2,
   X,
 } from 'lucide-react';
 const navigation = [
-  { id: 'day', title: 'Visão diária', icon: LayoutList },
+  { id: 'day', title: 'Resumo diário', icon: LayoutList },
   { id: 'tasks', title: 'Tarefas', icon: CheckSquare2 },
   { id: 'month', title: 'Relatório mensal', icon: CalendarDays },
   { id: 'agents', title: 'Agentes', icon: Bot },
@@ -30,14 +29,12 @@ export function Shell({
   taskCount,
   timezone,
   contexts,
-  newTask,
   children,
 }: {
   page: Page;
   taskCount: number;
   timezone: string;
   contexts: ContextSummary[];
-  newTask: () => void;
   children: ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -84,12 +81,6 @@ export function Shell({
         <main className="mx-auto max-w-screen-2xl p-4 md:p-8 space-y-6">
           <div className="flex items-center justify-between gap-4">
             <h1 className="text-2xl font-semibold">{title}</h1>
-            {page !== 'task' && (
-              <button className="btn btn-primary" onClick={newTask}>
-                <Plus size={18} />
-                Nova tarefa
-              </button>
-            )}
           </div>
           {children}
         </main>

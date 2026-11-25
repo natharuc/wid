@@ -13,11 +13,13 @@ import {
 import type { WorkStore } from './ports.js';
 import { contextKey, DEFAULT_CONTEXT, summarizeContexts } from '../domain/context.js';
 import { taskReport } from '../domain/task-report.js';
+import { validateWorkEvidence } from './work-evidence-validation.js';
 
 export class WorkService {
   constructor(
     private readonly store: WorkStore,
     private readonly now = () => new Date().toISOString(),
+    private readonly timezone = async () => 'America/Sao_Paulo',
   ) {}
   async create(input: unknown, identity: Source) {
     const data = createSchema.parse(input);
@@ -30,6 +32,8 @@ export class WorkService {
         const now = this.now();
         const occurredAt = data.occurredAt ?? now;
         this.validateTime(occurredAt, now);
+        if (data.work)
+          validateWorkEvidence(data.work, [], now, await this.timezone(), data.occurredAt);
         const task: Task = {
           id: randomUUID(),
           title: data.title,
@@ -50,6 +54,7 @@ export class WorkService {
           occurredAt,
           recordedAt: now,
           context: task.context,
+          ...(data.work ? { work: data.work } : {}),
         };
         await unit.saveTask(task, true);
         await unit.append(event);
@@ -70,6 +75,14 @@ export class WorkService {
         const now = this.now();
         const occurredAt = data.occurredAt ?? now;
         this.validateTime(occurredAt, now);
+        if (data.work)
+          validateWorkEvidence(
+            data.work,
+            await unit.events(task.id),
+            now,
+            await this.timezone(),
+            data.occurredAt,
+          );
         if (data.correctsEventId) {
           const original = await unit.event(data.correctsEventId);
           if (!original || original.taskId !== task.id)
@@ -77,6 +90,10 @@ export class WorkService {
           // Corrections are append-only annotations and replacement effort, never silent status rewrites.
           if (original.kind === 'corrected')
             throw new WorkError('Corrija o evento original, não outra correção.');
+          if (original.work && !data.work && !data.effort)
+            throw new WorkError(
+              'Para corrigir um fato estruturado, envie a substituição em work com o dia factual e as evidências.',
+            );
         }
         if (data.kind === 'historical_note' && Date.parse(occurredAt) > Date.parse(now))
           throw new WorkError('Anotação histórica exige um horário já ocorrido.');
@@ -101,6 +118,9 @@ export class WorkService {
           ...(data.kind === 'references_added' ? { references: data.references } : {}),
           ...(data.kind === 'historical_note'
             ? { references: data.references, context: task.context }
+            : {}),
+          ...(data.work
+            ? { work: data.work, references: data.references, context: task.context }
             : {}),
         };
         await unit.append(event);

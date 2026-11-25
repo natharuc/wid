@@ -275,6 +275,81 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     };
     assert.equal(historyDetail.task.status, 'completed');
     assert.ok(historyDetail.events.some((event) => event.kind === 'historical_note'));
+    assert.ok(recordProperties.kind.enum?.includes('work_recorded'));
+    assert.ok(recordTool.inputSchema.properties?.work);
+    const observed = {
+      taskId: created.task.id,
+      kind: 'work_recorded',
+      note: 'Resultado de teste executado pelo agente; participação humana não observada.',
+      work: {
+        day: '2026-11-23',
+        summary: 'Validou o fluxo de recebimentos com os testes automatizados.',
+        outcome: 'delivered',
+        actor: 'agent',
+        evidence: [
+          {
+            id: 'observation:test-result:1',
+            kind: 'tool_result',
+            summary: 'A execução de teste terminou sem falhas.',
+            sourceId: 'fixture-test-result',
+          },
+        ],
+        episode: {
+          id: 'episode:automated-validation',
+          phase: 'validation',
+          window: { startedAt: '2026-11-23T09:00:00-03:00', endedAt: '2026-11-23T09:45:00-03:00' },
+        },
+      },
+      references: [{ label: 'Relatório de testes', url: 'https://example.com/test-result' }],
+      idempotencyKey: 'structured-work-mcp',
+    };
+    const workResult = await client.callTool({ name: 'wid_record_event', arguments: observed });
+    assert.equal(workResult.isError, undefined);
+    const registered = decode(workResult);
+    assert.equal(registered.task.status, 'completed');
+    assert.equal(registered.event.work.actor, 'agent');
+    const digestDay = decode(
+      await client.callTool({
+        name: 'wid_report_day',
+        arguments: { day: '2026-11-23', context: 'Pesquisa / Cliente Á' },
+      }),
+    );
+    assert.equal(digestDay.humanTimeRecorded, false);
+    assert.equal(digestDay.humanMinutes, 0);
+    assert.equal(digestDay.digest.items[0].facts[0].summary, observed.work.summary);
+    assert.equal(digestDay.digest.items[0].evidenceCount, 1);
+    const detailWithDigest = (await (
+      await fetch(
+        `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('Pesquisa / Cliente Á')}`,
+      )
+    ).json()) as { digest: { day: string; items: { facts: { eventId: string }[] }[] }[] };
+    assert.equal(
+      detailWithDigest.digest.find((item) => item.day === '2026-11-23')?.items[0].facts[0].eventId,
+      registered.event.id,
+    );
+    const conflicting = await client.callTool({
+      name: 'wid_record_event',
+      arguments: {
+        ...observed,
+        work: {
+          ...observed.work,
+          evidence: [
+            { ...observed.work.evidence[0], summary: 'Another observation under the same ID' },
+          ],
+        },
+        idempotencyKey: 'conflicting-observation',
+      },
+    });
+    assert.equal(conflicting.isError, true);
+    const fakeHuman = await client.callTool({
+      name: 'wid_record_event',
+      arguments: {
+        ...observed,
+        work: { ...observed.work, actor: 'human' },
+        idempotencyKey: 'unsupported-human-attribution',
+      },
+    });
+    assert.equal(fakeHuman.isError, true);
     await settings.update((current) => ({
       ...current,
       agents: { ...current.agents, codex: false },

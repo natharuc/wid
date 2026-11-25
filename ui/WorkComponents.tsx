@@ -2,6 +2,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { hours, kindLabel, statusLabel, type Task, type WorkEvent } from './api';
 import { taskPath } from './navigation';
 import { useWorkContext } from './WorkContext';
+import { WorkEvidenceDetails } from './WorkEvidenceDetails';
 const stateClasses: Record<Task['status'], string> = {
   planned: 'badge-ghost',
   active: 'badge-info',
@@ -117,6 +118,14 @@ export function TimelineEvent({
           <p className="text-xs text-base-content/60">
             {event.previousContext} → {event.context}
           </p>
+        )}
+        {event.work && (
+          <WorkEvidenceDetails
+            evidence={event.work.evidence}
+            episode={event.work.episode}
+            event={event}
+            timezone={timezone}
+          />
         )}
         <a className="btn btn-ghost btn-xs" href={href(taskPath(event.taskId))}>
           Abrir tarefa

@@ -1,5 +1,7 @@
 import { History } from 'lucide-react';
 import { hours, kindLabel, type WorkEvent } from './api';
+import { WorkEvidenceDetails } from './WorkEvidenceDetails';
+import { actorLabel, formatDay, outcomeLabel } from './workLabels';
 
 export const formatDate = (value: string, timezone: string) =>
   new Intl.DateTimeFormat('pt-BR', {
@@ -23,14 +25,33 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
           <article key={event.id} className="border-l-2 border-base-300 pl-4 space-y-2">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h3 className="font-semibold text-sm">{kindLabel[event.kind]}</h3>
-              <time dateTime={event.occurredAt} className="text-xs text-base-content/60">
-                {formatDate(event.occurredAt, timezone)}
+              <time
+                dateTime={event.work?.day ?? event.occurredAt}
+                className="text-xs text-base-content/60"
+              >
+                {event.work ? formatDay(event.work.day) : formatDate(event.occurredAt, timezone)}
               </time>
               {corrected.has(event.id) && (
                 <span className="badge badge-ghost badge-xs">Corrigido</span>
               )}
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{event.note}</p>
+            {event.work && (
+              <div className="space-y-2">
+                <p className="text-xs text-base-content/60">
+                  {outcomeLabel[event.work.outcome]} · {actorLabel[event.work.actor]}
+                </p>
+                {event.work.summary !== event.note && (
+                  <p className="text-sm break-words">{event.work.summary}</p>
+                )}
+                <WorkEvidenceDetails
+                  evidence={event.work.evidence}
+                  episode={event.work.episode}
+                  event={event}
+                  timezone={timezone}
+                />
+              </div>
+            )}
             {event.effort && (
               <p className="text-xs font-medium text-primary">
                 {hours(event.effort.minutes)} ·{' '}
@@ -52,17 +73,18 @@ export function TaskHistory({ events, timezone }: { events: WorkEvent[]; timezon
                 {event.previousContext} → {event.context}
               </p>
             )}
-            {event.references?.map((ref) => (
-              <a
-                key={ref.url}
-                className="link link-primary text-xs block"
-                href={ref.url}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {ref.label}
-              </a>
-            ))}
+            {!event.work &&
+              event.references?.map((ref) => (
+                <a
+                  key={ref.url}
+                  className="link link-primary text-xs block"
+                  href={ref.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {ref.label}
+                </a>
+              ))}
             <details className="text-xs text-base-content/60">
               <summary className="cursor-pointer">Origem: {event.source.agent}</summary>
               <dl className="mt-2 space-y-1 break-all">

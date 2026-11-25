@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { Info, X } from 'lucide-react';
+import { hours } from './api';
 import { localDay, isCalendarDay } from '../src/domain/time';
-import { type Task } from './api';
-import { WorkDialog } from './WorkDialog';
 import { MonthView } from './MonthView';
 import { DayOverview } from './DayOverview';
 import { ActivityView } from './ActivityView';
@@ -12,7 +11,7 @@ import { pageFromPath } from './navigation';
 import { TaskDetailPage } from './TaskDetailPage';
 import { useDashboard } from './useDashboard';
 import { useWorkContext } from './WorkContext';
-import { contextKey, DEFAULT_CONTEXT } from '../src/domain/context';
+import { WorkDigestView } from './WorkDigestView';
 export function App() {
   const page = pageFromPath(window.location.pathname);
   const requestedDay = new URLSearchParams(window.location.search).get('day') ?? '';
@@ -20,7 +19,6 @@ export function App() {
     isCalendarDay(requestedDay) ? requestedDay : localDay(new Date().toISOString()),
   );
   const [month, setMonth] = useState(day.slice(0, 7));
-  const [dialog, setDialog] = useState<Task | 'new' | null>(null);
   const { context, href } = useWorkContext();
   const {
     snapshot,
@@ -34,22 +32,13 @@ export function App() {
     loading,
     reload,
   } = useDashboard(day, month, context);
-  const activeContext =
-    contexts.find((item) => contextKey(item.name) === contextKey(context))?.name ??
-    (context || DEFAULT_CONTEXT);
   const timezone = settings?.timezone ?? 'America/Sao_Paulo';
   const chooseDay = (day: string) => {
     window.location.assign(href(`/?day=${day}`));
   };
   return (
     <>
-      <Shell
-        page={page}
-        taskCount={snapshot.tasks.length}
-        timezone={timezone}
-        contexts={contexts}
-        newTask={() => setDialog('new')}
-      >
+      <Shell page={page} taskCount={snapshot.tasks.length} timezone={timezone} contexts={contexts}>
         {notice && (
           <div className="alert alert-soft alert-info" role="status">
             <Info size={20} />
@@ -73,14 +62,43 @@ export function App() {
             {page === 'day' && (
               <DayOverview daily={daily} day={day} setDay={setDay} timezone={timezone} />
             )}
-            {(page === 'day' || page === 'tasks') && (
+            {page === 'day' && daily && (
+              <>
+                <WorkDigestView
+                  digest={daily.digest}
+                  events={snapshot.events}
+                  timezone={timezone}
+                />
+                <details className="collapse collapse-arrow border border-base-300 bg-base-100">
+                  <summary className="collapse-title font-medium text-sm">
+                    Histórico e execução dos agentes
+                  </summary>
+                  <div className="collapse-content space-y-5">
+                    <p className="text-xs text-base-content/60">
+                      Execução dos agentes e espera ficam fora das horas humanas.
+                    </p>
+                    <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                      <span>Agentes: {hours(daily.minutes.agent_run)}</span>
+                      <span>Espera / jobs: {hours(daily.minutes.wait)}</span>
+                    </div>
+                    <ActivityView
+                      page="day"
+                      day={day}
+                      snapshot={snapshot}
+                      daily={daily}
+                      timezone={timezone}
+                    />
+                  </div>
+                </details>
+              </>
+            )}
+            {page === 'tasks' && (
               <ActivityView
                 page={page}
                 day={day}
                 snapshot={snapshot}
                 daily={daily}
                 timezone={timezone}
-                onNew={() => setDialog('new')}
               />
             )}
             {page === 'month' && monthly && (
@@ -102,18 +120,6 @@ export function App() {
           </>
         )}
       </Shell>
-      {dialog && (
-        <WorkDialog
-          task={dialog === 'new' ? undefined : dialog}
-          day={day}
-          contexts={contexts}
-          defaultContext={activeContext}
-          onClose={() => setDialog(null)}
-          onSaved={() => {
-            void reload().catch((error) => setNotice(error.message));
-          }}
-        />
-      )}
     </>
   );
 }

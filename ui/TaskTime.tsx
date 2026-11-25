@@ -1,37 +1,32 @@
 import { hours } from './api';
-import { Metric } from './WorkComponents';
 import type { TaskReport } from '../src/domain/task-report';
 
 export function TaskTimeSummary({ data }: { data: TaskReport }) {
   const { totals, days } = data;
   const recorded = days.some((day) => day.humanTimeRecorded);
   return (
-    <div className="stats stats-vertical md:stats-horizontal w-full border border-base-300 bg-base-100">
-      <Metric
-        label="Horas humanas registradas"
-        value={recorded ? hours(totals.humanMinutes) : '—'}
-        description={
-          recorded
+    <div className="space-y-3 border-y border-base-300 py-4">
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2">
+        <span className="text-sm font-medium">Dedicação humana registrada</span>
+        <strong className="text-2xl tabular-nums text-primary">
+          {recorded ? hours(totals.humanMinutes) : '—'}
+        </strong>
+        <span className="text-xs text-base-content/60">
+          {recorded
             ? `${hours(totals.measuredMinutes)} medidas · ${hours(totals.estimatedMinutes)} estimadas`
-            : 'Tempo desconhecido'
-        }
-        accent
-      />
-      <Metric
-        label="Dias com registros"
-        value={String(days.length)}
-        description={`${data.daysWithoutTime} sem horas humanas registradas`}
-      />
-      <Metric
-        label="Execução do agente"
-        value={hours(totals.agentMinutes)}
-        description="Fora das horas humanas"
-      />
-      <Metric
-        label="Espera / jobs"
-        value={hours(totals.waitMinutes)}
-        description="Fora das horas humanas"
-      />
+            : 'Tempo humano desconhecido'}
+        </span>
+      </div>
+      <p className="text-xs text-base-content/60">
+        {days.length} dias com registros · {data.daysWithoutTime} sem horas humanas registradas
+      </p>
+      <details className="text-xs text-base-content/60">
+        <summary className="cursor-pointer">Execução dos agentes e espera</summary>
+        <p className="mt-2">
+          {hours(totals.agentMinutes)} de execução do agente · {hours(totals.waitMinutes)} de
+          espera. Fora das horas humanas.
+        </p>
+      </details>
     </div>
   );
 }

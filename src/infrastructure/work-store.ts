@@ -58,6 +58,14 @@ class SqlWorkUnit implements WorkUnit {
       JSON.stringify(event),
     ]);
   }
+  async events(taskId: string) {
+    return (
+      await this.db.query<{ document: WorkEvent }>(
+        'SELECT document FROM wid_events WHERE task_id=$1 ORDER BY sequence',
+        [taskId],
+      )
+    ).rows.map((row) => row.document);
+  }
 }
 export class SqlWorkStore implements WorkStore {
   constructor(private readonly db: Database) {}

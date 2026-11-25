@@ -1,8 +1,9 @@
 import type { Task, WorkEvent } from '../src/domain/work';
 import type { Settings } from '../src/infrastructure/settings';
 import type { monthReport, summarize } from '../src/domain/work';
+import type { WorkDigest } from '../src/domain/work-digest';
 export type Snapshot = { tasks: Task[]; events: WorkEvent[] };
-export type DayReport = ReturnType<typeof summarize>;
+export type DayReport = ReturnType<typeof summarize> & { digest: WorkDigest };
 export type MonthReport = ReturnType<typeof monthReport>;
 export interface Agent {
   id: string;
@@ -48,5 +49,6 @@ export const kindLabel: Record<WorkEvent['kind'], string> = {
   context_changed: 'Contexto alterado',
   references_added: 'Referências adicionadas',
   historical_note: 'Anotação histórica',
+  work_recorded: 'Trabalho registrado',
 };
 export type { Settings, Task, WorkEvent };

@@ -30,7 +30,7 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.5.0 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.6.0 está distribuída pelo GitHub; não está publicada no registro npm.
 
 ### Atualizar a instalação
 
@@ -43,7 +43,7 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.5.0, use `https://github.com/natharuc/wid/releases/download/v0.5.0/wid.tgz`.
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.6.0, use `https://github.com/natharuc/wid/releases/download/v0.6.0/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -53,6 +53,10 @@ npm install -g github:natharuc/wid
 
 ## MVP
 
+- Resumo rápido de resultados, avanços e bloqueios, com autoria e evidências abríveis. Planejamento e notas legadas neutras aparecem separadamente.
+- Registro do trabalho pelos agentes: a interface de acompanhamento não contém formulários de criação/atualização de tarefas.
+- Evidências estruturadas e episódios observados, sem transformar mensagens ou janelas de conversa em minutos humanos.
+
 - Tarefas com empresa, projeto e referências opcionais a chats, issues, Tasks e PRs.
 - Contextos dinâmicos escolhidos pelo agente: texto livre, grupos e relatórios filtrados, com reclassificação auditável.
 - Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
@@ -60,11 +64,57 @@ npm install -g github:natharuc/wid
 - Visão diária, linha do tempo e calendário mensal com cobertura explícita.
 - Interface React com componentes DaisyUI, temas corporate (claro) / business (escuro) e layout Tailwind; sem CSS próprio. O seletor de sol/lua no cabeçalho salva a escolha no navegador; na primeira abertura, segue o sistema. O tema é aplicado antes da renderização da interface.
 - MCP local por **stdio** e **Streamable HTTP**, usando o SDK oficial.
-- Detecção e ativação/desativação de Codex, Claude Code e Cursor.
+- Detecção e ativação/desativação de Codex, Claude Code, Cursor, GitHub Copilot, Gemini CLI e OpenCode 2.
 - Instruções globais gerenciadas para Codex e Claude Code; instruções no MCP para todos.
 - Hook opcional `SessionStart` no Claude Code, como lembrete de registro.
 - Exportação JSON com fontes, horários originais e histórico de correções.
-- URLs de GitHub e Azure DevOps como atalhos configuráveis. Sem sincronização ou credenciais externas nesta versão.
+- URLs de sistemas externos pertencem às tarefas e aos eventos de evidência. Sem configuração global de ferramenta, sincronização ou credenciais externas nesta versão.
+
+## Resumo e evidências do trabalho
+
+A abertura prioriza o resumo do dia. Cada tarefa mostra até três fatos recentes, com resultado, autoria e fontes. As primeiras cinco tarefas aparecem de imediato e as demais podem ser expandidas. Histórico completo, execução de agentes e espera ficam em uma seção secundária. O detalhe da tarefa começa pelo resumo factual mais recente.
+
+O agente escreve a síntese usando `work` em `wid_record_event`. Para um fato neutro que não altera o estado atual da tarefa, use `kind: "work_recorded"`; também funciona em tarefas concluídas ou canceladas e quando somente o dia original é conhecido. Eventos reais de ciclo de vida podem incluir o mesmo bloco. Na criação, `work` é opcional e seu resultado deve ser `planned`.
+
+Exemplo de contrato, com identificador de tarefa a substituir e conteúdo ilustrativo:
+
+```json
+{
+  "taskId": "UUID da tarefa existente",
+  "kind": "work_recorded",
+  "note": "Revisão relatada pelo usuário; duração desconhecida.",
+  "work": {
+    "day": "2026-11-25",
+    "summary": "Revisou as regras de recebimento e definiu o ajuste necessário.",
+    "outcome": "advanced",
+    "actor": "human",
+    "evidence": [
+      {
+        "id": "conversation-123:review-receipts:observation-1",
+        "kind": "user_report",
+        "summary": "Usuário relatou a revisão e indicou a regra a corrigir."
+      }
+    ],
+    "episode": { "id": "conversation-123:review-receipts", "phase": "review" }
+  },
+  "idempotencyKey": "conversation-123:review-receipts:v1"
+}
+```
+
+Campos de `work`:
+
+- `day`: dia local factual, não a data da gravação; não exige inventar uma hora. Se `occurredAt` do evento for enviado explicitamente, ele deve corresponder a esse dia no fuso configurado.
+- `summary`: frase factual de até 280 caracteres, apoiada nas evidências. Não substitui a nota detalhada.
+- `outcome`: `planned`, `advanced`, `delivered`, `blocked` ou `cancelled`. Eventos `completed`, `blocked` e `cancelled` exigem resultado correspondente.
+- `actor`: `human`, `agent`, `joint` ou `unknown`. Autoria humana/conjunta exige evidência do tipo `human_message` ou `user_report`; um resultado de comando sozinho não comprova participação humana.
+- `evidence`: de 1 a 20 observações com `id` estável, `kind` (`human_message`, `agent_message`, `tool_result`, `user_report`) e `summary` curta. São relatos estruturados do agente, não certificação independente. `sourceId` só deve ser enviado quando o identificador original é conhecido. Cada observação pode informar `occurredAt` com offset, apenas `day`, ou nenhum horário quando desconhecido; nunca ambos.
+- `episode`: identificação estável e `phase` (`definition`, `review`, `decision`, `validation`, `execution`, `other`). A janela opcional `window: {startedAt, endedAt}` descreve somente horários observados da conversa. **Não é duração humana medida e não gera horas.**
+
+O mesmo `episode.id` na mesma tarefa/dia revisa o resumo inteiro daquele episódio: envie uma síntese completa, não apenas um fragmento. Fatos independentes usam episódios diferentes. Sem episódio, afirmações equivalentes são consolidadas no resumo; todos os eventos permanecem na auditoria. Um `evidence.id` já usado na tarefa não pode receber conteúdo diferente, inclusive entre agentes: registre uma nova observação e preserve o original. O estado e as referências atuais da tarefa não são alterados por `work_recorded`; links informados nesse evento pertencem ao fato.
+
+Para corrigir um fato estruturado, use `kind: "corrected"`, `correctsEventId` e o bloco `work` de substituição com dia/evidências corretos. Uma nota sem `work` não substitui silenciosamente estrutura ou dia. Correções exclusivamente de esforço preservam o fato. Correções de auditoria administrativa não viram realizações. Registros antigos sem `work` continuam acessíveis com texto fiel ao evento, identificados como legados e autoria não informada; não recebem evidências inventadas. Notas históricas legadas neutras não são classificadas como avanços só porque a tarefa está concluída atualmente.
+
+`wid_report_day` e `GET /api/day/:day` acrescentam `digest`; `GET /api/tasks/:id` inclui os resumos por dia. As consultas continuam filtradas por contexto. Eventos administrativos/estimativas não alimentam realizações do resumo. A estimativa existente permanece separada: nenhum bloco `work` aceita `effort`, e `wid_estimate_day` não ganha um estimador automático nesta versão. A síntese vem do agente conectado, sem novo provedor ou chave de IA no serviço local.
 
 ## Como as horas são calculadas
 

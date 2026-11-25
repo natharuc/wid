@@ -1,5 +1,7 @@
 import { z } from 'zod';
-import { localDay, isCalendarDay } from './time.js';
+import { localDay } from './time.js';
+import { calendarDaySchema, structuredWorkSchema, type StructuredWork } from './work-evidence.js';
+import { eventDay, effectiveFactEvents } from './work-digest.js';
 export { localDay } from './time.js';
 
 export const eventKinds = [
@@ -15,6 +17,7 @@ export const eventKinds = [
   'context_changed',
   'references_added',
   'historical_note',
+  'work_recorded',
 ] as const;
 export const statuses = ['planned', 'active', 'blocked', 'completed', 'cancelled'] as const;
 export type Status = (typeof statuses)[number];
@@ -35,10 +38,7 @@ export const referenceSchema = z.object({
     .max(2048)
     .refine((value) => /^(https?:|thread:)/.test(value), 'Use http, https or thread URLs'),
 });
-export const daySchema = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .refine(isCalendarDay, 'Data inválida');
+export const daySchema = calendarDaySchema;
 export const effortSchema = z
   .object({
     category: z.enum(['human_measured', 'human_estimated', 'agent_run', 'wait']),
@@ -67,22 +67,33 @@ export const contextSchema = z
   .describe(
     'Free-form work context chosen by the agent, e.g. MAG, POLLARIS, SEDUCAO or any other name. Reuse wid_list_contexts names when appropriate; there is no fixed catalog. Separate from company/project.',
   );
-export const createSchema = z.object({
-  title: z.string().trim().min(1).max(240),
-  company: z.string().trim().max(100).default(''),
-  project: z.string().trim().max(120).default(''),
-  references: z
-    .array(referenceSchema)
-    .max(20)
-    .default([])
-    .describe(
-      'Optional links to the actual work item, GitHub issue/PR, Azure DevOps, Slack or chat. Provide a short descriptive label and the real URL; never invent a link.',
-    ),
-  note: text.optional(),
-  occurredAt: z.string().datetime({ offset: true }).optional(),
-  idempotencyKey: z.string().min(1).max(200),
-  context: contextSchema.optional(),
-});
+export const createSchema = z
+  .object({
+    title: z.string().trim().min(1).max(240),
+    company: z.string().trim().max(100).default(''),
+    project: z.string().trim().max(120).default(''),
+    references: z
+      .array(referenceSchema)
+      .max(20)
+      .default([])
+      .describe(
+        'Optional links to the actual work item, GitHub issue/PR, Azure DevOps, Slack or chat. Provide a short descriptive label and the real URL; never invent a link.',
+      ),
+    note: text.optional(),
+    occurredAt: z.string().datetime({ offset: true }).optional(),
+    idempotencyKey: z.string().min(1).max(200),
+    context: contextSchema.optional(),
+    work: structuredWorkSchema.optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.work && value.work.outcome !== 'planned')
+      ctx.addIssue({
+        code: 'custom',
+        message:
+          'A criação registra uma intenção. Use outcome planned e registre realizações em eventos posteriores.',
+        path: ['work', 'outcome'],
+      });
+  });
 export const recordSchema = z
   .object({
     taskId: z.string().uuid(),
@@ -94,11 +105,49 @@ export const recordSchema = z
     idempotencyKey: z.string().min(1).max(200),
     context: contextSchema.optional(),
     references: z.array(referenceSchema).max(20).optional(),
+    work: structuredWorkSchema.optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.kind === 'work_recorded' && !value.work)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'work_recorded exige resumo e evidências em work.',
+        path: ['work'],
+      });
+    if (value.work && ['effort', 'context_changed', 'references_added'].includes(value.kind))
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Registros administrativos não contêm realizações de trabalho.',
+        path: ['work'],
+      });
+    if (value.work && value.effort)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Registre esforço separadamente das evidências de trabalho.',
+        path: ['effort'],
+      });
+    if (value.kind === 'work_recorded' && value.effort)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'work_recorded não registra dedicação humana.',
+        path: ['effort'],
+      });
+    const expectedOutcome = { completed: 'delivered', blocked: 'blocked', cancelled: 'cancelled' }[
+      value.kind as 'completed' | 'blocked' | 'cancelled'
+    ];
+    if (value.work && expectedOutcome && value.work.outcome !== expectedOutcome)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Resultado incompatível com o tipo do evento.',
+        path: ['work', 'outcome'],
+      });
     if (value.kind === 'references_added' && !value.references?.length)
       ctx.addIssue({ code: 'custom', message: 'Informe as referências.', path: ['references'] });
-    if (!['references_added', 'historical_note'].includes(value.kind) && value.references)
+    if (
+      !['references_added', 'historical_note'].includes(value.kind) &&
+      !value.work &&
+      value.references
+    )
       ctx.addIssue({
         code: 'custom',
         message: 'Use references_added ou historical_note para registrar referências.',
@@ -182,13 +231,14 @@ export interface WorkEvent {
   context?: string;
   previousContext?: string;
   references?: Task['references'];
+  work?: StructuredWork;
 }
 export interface CommandResult {
   task: Task;
   event: WorkEvent;
 }
 export function nextStatus(current: Status, kind: WorkEvent['kind']): Status {
-  if (kind === 'historical_note') return current;
+  if (kind === 'historical_note' || kind === 'work_recorded') return current;
   if (
     (current === 'completed' || current === 'cancelled') &&
     ['started', 'progressed', 'blocked', 'completed', 'cancelled'].includes(kind)
@@ -211,9 +261,7 @@ export function summarize(events: WorkEvent[], day: string, timezone: string) {
   const replaced = new Set(
     events.flatMap((event) => (event.correctsEventId ? [event.correctsEventId] : [])),
   );
-  const daily = events.filter(
-    (event) => (event.effort?.day ?? localDay(event.occurredAt, timezone)) === day,
-  );
+  const daily = effectiveFactEvents(events).filter((event) => eventDay(event, timezone) === day);
   const minutes = { human_measured: 0, human_estimated: 0, agent_run: 0, wait: 0 };
   const latest = new Map<string, WorkEvent>();
   for (const event of daily)

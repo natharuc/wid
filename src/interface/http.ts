@@ -15,6 +15,7 @@ import { agentIds, type AgentId, type SettingsStore } from '../infrastructure/se
 import type { AgentManager } from '../infrastructure/agents.js';
 import { makeMcp, type WorkGateway } from './mcp.js';
 import { VERSION } from '../version.js';
+import { makeWorkDigest } from '../domain/work-digest.js';
 
 export function createApp(options: {
   work: WorkService;
@@ -57,9 +58,12 @@ export function createApp(options: {
     contexts: () => work.contexts(),
     day: async (day, context) => {
       const snapshot = await work.snapshot(context);
+      const timezone = (await settings.read()).timezone;
+      const parsedDay = daySchema.parse(day);
       return {
         context: context ?? null,
-        ...summarize(snapshot.events, daySchema.parse(day), (await settings.read()).timezone),
+        ...summarize(snapshot.events, parsedDay, timezone),
+        digest: makeWorkDigest(snapshot.tasks, snapshot.events, parsedDay, timezone),
         taskDetails: snapshot.tasks,
       };
     },

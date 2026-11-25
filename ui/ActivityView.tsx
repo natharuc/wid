@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { History, ListTodo, Plus, Search } from 'lucide-react';
-import { localDay } from '../src/domain/time';
+import { History, ListTodo, Search } from 'lucide-react';
+import { eventDay } from '../src/domain/work-digest';
 import { statusLabel, type DayReport, type Snapshot } from './api';
 import { TaskRow, TimelineEvent } from './WorkComponents';
 import { contextKey, summarizeContexts } from '../src/domain/context';
@@ -10,20 +10,16 @@ export function ActivityView({
   snapshot,
   daily,
   timezone,
-  onNew,
 }: {
   page: 'day' | 'tasks';
   day: string;
   snapshot: Snapshot;
   daily?: DayReport;
   timezone: string;
-  onNew: () => void;
 }) {
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState('all');
-  const events = snapshot.events.filter(
-    (event) => (event.effort?.day ?? localDay(event.occurredAt, timezone)) === day,
-  );
+  const events = snapshot.events.filter((event) => eventDay(event, timezone) === day);
   const ids = new Set(events.map((event) => event.taskId));
   const tasks = snapshot.tasks.filter(
     (task) =>
@@ -41,7 +37,7 @@ export function ActivityView({
         <div className="card-body gap-5 p-4 sm:p-6">
           <div className="flex items-center justify-between gap-2">
             <h2 className="card-title text-base">
-              {page === 'day' ? 'Atividades do dia' : 'Tarefas registradas'}
+              {page === 'day' ? 'Tarefas com registros no dia' : 'Tarefas registradas'}
             </h2>
             <span className="badge badge-ghost badge-sm">{tasks.length}</span>
           </div>
@@ -114,10 +110,6 @@ export function ActivityView({
                   ? 'Ajuste a busca ou o estado selecionado.'
                   : 'Sem registros, o tempo trabalhado é desconhecido.'}
               </p>
-              <button className="btn btn-outline btn-sm mt-2" onClick={onNew}>
-                <Plus size={16} />
-                Criar tarefa
-              </button>
             </div>
           )}
         </div>

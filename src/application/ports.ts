@@ -3,6 +3,7 @@ export interface WorkUnit {
   task(id: string): Promise<Task | undefined>;
   saveTask(task: Task, create?: boolean): Promise<void>;
   event(id: string): Promise<WorkEvent | undefined>;
+  events(taskId: string): Promise<WorkEvent[]>;
   append(event: WorkEvent): Promise<void>;
 }
 export interface WorkStore {

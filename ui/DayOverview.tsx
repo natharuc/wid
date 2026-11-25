@@ -1,7 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { localDay } from '../src/domain/time';
 import { hours, type DayReport } from './api';
-import { Metric } from './WorkComponents';
 export function DayOverview({
   daily,
   day,
@@ -54,32 +53,18 @@ export function DayOverview({
           {daily?.coverage === 'unknown' ? 'Sem registros' : 'Cobertura parcial'}
         </span>
       </div>
-      <div className="stats stats-vertical md:stats-horizontal w-full border border-base-300 bg-base-100">
-        <Metric
-          label="Horas humanas registradas"
-          value={daily?.humanTimeRecorded ? hours(daily.humanMinutes) : '—'}
-          description={
-            daily?.humanTimeRecorded
-              ? `${hours(daily.minutes.human_measured)} medidas · ${hours(daily.minutes.human_estimated)} estimadas`
-              : 'Tempo humano desconhecido'
-          }
-          accent
-        />
-        <Metric
-          label="Tarefas no dia"
-          value={String(daily?.tasks ?? 0)}
-          description={`${daily?.events ?? 0} eventos registrados`}
-        />
-        <Metric
-          label="Execução do agente"
-          value={hours(daily?.minutes.agent_run ?? 0)}
-          description="Fora das horas humanas"
-        />
-        <Metric
-          label="Espera / jobs"
-          value={hours(daily?.minutes.wait ?? 0)}
-          description="Fora das horas humanas"
-        />
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-y border-base-300 py-4">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-sm font-medium">Dedicação humana registrada</span>
+          <strong className="text-2xl tabular-nums text-primary">
+            {daily?.humanTimeRecorded ? hours(daily.humanMinutes) : '—'}
+          </strong>
+        </div>
+        <p className="text-xs text-base-content/60">
+          {daily?.humanTimeRecorded
+            ? `${hours(daily.minutes.human_measured)} medidas · ${hours(daily.minutes.human_estimated)} estimadas`
+            : 'Tempo humano desconhecido'}
+        </p>
       </div>
     </>
   );

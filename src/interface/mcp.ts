@@ -45,8 +45,8 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_create_task',
     {
       description:
-        'Register user work intention with a free-form context chosen by the agent. First consult wid_list_contexts and search existing tasks. Reuse a context name or choose a new one; examples are not an enum. Always pass context explicitly for new work. Company/project and corporate work items are optional.',
-      inputSchema: createSchema.extend(identity).shape,
+        'Register user work intention with a free-form context chosen by the agent. First consult wid_list_contexts and search existing tasks. Always pass context explicitly; no fixed catalog. Optionally attach work with outcome=planned and structured source evidence; do not describe intentions as delivered work. Later checkpoints belong in wid_record_event. Company/project and external references are optional.',
+      inputSchema: createSchema.safeExtend(identity).shape,
     },
     (input) =>
       result(() =>
@@ -57,7 +57,7 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_record_event',
     {
       description:
-        'Append work events. For retrospective facts on any existing task, including completed/cancelled, use kind=historical_note with taskId, note, original occurredAt (explicit UTC offset), idempotencyKey and optional references=[{label,url}], sessionId/chatUrl. It NEVER changes current status or records effort; references belong to that historical event. Do not disguise past facts as lifecycle events. Add current task links with kind=references_added and references. Change grouping with kind=context_changed and context. Effort snapshots replace prior task/day/category totals; human measured minutes require explicit user measurement.',
+        'Record a concise result with structured work={day,summary,outcome,actor,evidence,episode?}. Use kind=work_recorded for a neutral fact on any task, including closed tasks, or attach work to an actual lifecycle event. Evidence requires stable immutable id, kind and a redacted summary; original sourceId/time are optional and must not be invented. episode.window is observed conversation time, NEVER human duration. Same episode id on a task/day revises its COMPLETE summary. Work records never carry effort. Historical_note still requires original occurredAt with UTC offset and preserves status. Use references_added for current task links, context_changed for regrouping, and corrected with correctsEventId plus work to correct a factual summary. Preserve idempotency keys and read current history before updating.',
       inputSchema: { ...recordSchema.shape, ...identity },
     },
     (input) =>
