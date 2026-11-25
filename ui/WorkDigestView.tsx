@@ -29,6 +29,10 @@ export function WorkDigestView({
     .map((item) => ({ ...item, facts: item.facts.filter((fact) => fact.outcome === 'planned') }))
     .filter((item) => item.facts.length);
   const recorded = digest.items
+    .filter(
+      (item) =>
+        !item.facts.some((fact) => fact.outcome !== 'planned' && fact.outcome !== 'recorded'),
+    )
     .map((item) => ({ ...item, facts: item.facts.filter((fact) => fact.outcome === 'recorded') }))
     .filter((item) => item.facts.length);
   const draw = (items: WorkDigestItem[]) => {
