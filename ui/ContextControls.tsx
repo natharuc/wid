@@ -14,13 +14,16 @@ export function ContextFilter({
   return (
     <select
       className="select w-full sm:w-auto sm:max-w-64"
-      aria-label="Filtrar por contexto"
-      value={value}
+      aria-label="Contexto de trabalho"
+      value={contexts.find((item) => contextKey(item.name) === contextKey(value))?.name ?? value}
       onChange={(event) => onChange(event.target.value)}
     >
       <option value="">Todos os contextos</option>
+      {value && !contexts.some((item) => contextKey(item.name) === contextKey(value)) && (
+        <option value={value}>{value} (0)</option>
+      )}
       {contexts.map((context) => (
-        <option value={contextKey(context.name)} key={contextKey(context.name)}>
+        <option value={context.name} key={contextKey(context.name)}>
           {context.name} ({context.taskCount})
         </option>
       ))}

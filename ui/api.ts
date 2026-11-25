@@ -7,6 +7,7 @@ export type MonthReport = ReturnType<typeof monthReport>;
 export interface Agent {
   id: string;
   name: string;
+  description: string;
   detected: boolean;
   enabled: boolean;
   rules: string;

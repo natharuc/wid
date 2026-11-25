@@ -100,7 +100,11 @@ export function createApp(options: {
   app.get('/api/snapshot', async (req, res) => res.json(await work.snapshot(queryContext(req))));
   app.get('/api/tasks/:id', async (req, res) =>
     res.json(
-      await work.detail(z.string().uuid().parse(req.params.id), (await settings.read()).timezone),
+      await work.detail(
+        z.string().uuid().parse(req.params.id),
+        (await settings.read()).timezone,
+        queryContext(req),
+      ),
     ),
   );
   app.get('/api/day/:day', async (req, res) =>
@@ -131,7 +135,6 @@ export function createApp(options: {
     const input = z
       .object({
         timezone: z.string().optional(),
-        integrations: z.object({ github: z.string(), azureDevOps: z.string() }).optional(),
       })
       .strict()
       .parse(req.body);
@@ -184,10 +187,10 @@ export function createApp(options: {
     setTimeout(() => options.onShutdown?.(), 50);
   });
   app.use('/api', (_req, res) => res.status(404).json({ error: 'Endpoint não encontrado.' }));
-  app.use(express.static(resolve(options.webPath)));
   app.get(['/tasks', '/month', '/agents', '/settings', '/task/:id'], (_req, res) =>
     res.sendFile(resolve(options.webPath, 'index.html')),
   );
+  app.use(express.static(resolve(options.webPath)));
   app.use(
     (error: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
       if (error instanceof ZodError)

@@ -115,9 +115,13 @@ export class WorkService {
   async contexts() {
     return summarizeContexts(await this.store.tasks());
   }
-  async detail(id: string, timezone: string) {
+  async detail(id: string, timezone: string, context?: string) {
     const task = await this.store.task(id);
-    if (!task) throw new WorkError('Tarefa não encontrada.', 404);
+    if (!task || (context && contextKey(task.context) !== contextKey(context)))
+      throw new WorkError(
+        context ? 'Tarefa não encontrada neste contexto.' : 'Tarefa não encontrada.',
+        404,
+      );
     return taskReport(task, await this.store.events(id), timezone);
   }
   private validateTime(value: string, now: string) {

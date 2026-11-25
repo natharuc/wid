@@ -5,18 +5,23 @@ import type { TaskReport } from '../src/domain/task-report';
 import { ReferenceLinks } from './ReferenceLinks';
 import { TaskHistory, formatDate } from './TaskHistory';
 import { TaskTimeSummary, TaskDayHours } from './TaskTime';
+import { useWorkContext } from './WorkContext';
+import { contextQuery } from './context-scope';
 
 export function TaskDetailPage({ taskId }: { taskId: string }) {
+  const { context, href } = useWorkContext();
   const [data, setData] = useState<TaskReport>();
   const [error, setError] = useState('');
   const reload = useCallback(async () => {
     try {
-      setData(await api<TaskReport>(`tasks/${encodeURIComponent(taskId)}`));
+      setData(await api<TaskReport>(`tasks/${encodeURIComponent(taskId)}${contextQuery(context)}`));
       setError('');
     } catch (err) {
+      setData(undefined);
+      document.title = 'Tarefa indisponível — WID';
       setError((err as Error).message);
     }
-  }, [taskId]);
+  }, [taskId, context]);
   useEffect(() => {
     void reload();
     const timer = setInterval(() => {
@@ -30,7 +35,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
   if (!data)
     return (
       <div className="space-y-4">
-        <a href="/tasks" className="btn btn-ghost btn-sm">
+        <a href={href('/tasks')} className="btn btn-ghost btn-sm">
           <ArrowLeft size={16} />
           Tarefas
         </a>
@@ -48,7 +53,7 @@ export function TaskDetailPage({ taskId }: { taskId: string }) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
-        <a href="/tasks" className="btn btn-ghost btn-sm">
+        <a href={href('/tasks')} className="btn btn-ghost btn-sm">
           <ArrowLeft size={16} />
           Tarefas
         </a>

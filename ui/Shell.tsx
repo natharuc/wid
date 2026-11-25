@@ -3,6 +3,9 @@ import { ThemeToggle } from './ThemeToggle';
 import { useTheme } from './useTheme';
 import { Brand } from './Brand';
 import { pagePaths, type Page } from './navigation';
+import type { ContextSummary } from '../src/domain/context';
+import { ContextFilter } from './ContextControls';
+import { useWorkContext } from './WorkContext';
 import {
   ArrowUpRight,
   Bot,
@@ -26,17 +29,20 @@ export function Shell({
   page,
   taskCount,
   timezone,
+  contexts,
   newTask,
   children,
 }: {
   page: Page;
   taskCount: number;
   timezone: string;
+  contexts: ContextSummary[];
   newTask: () => void;
   children: ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { dark, changeTheme } = useTheme();
+  const scope = useWorkContext();
   const title =
     page === 'task' ? 'Detalhes da tarefa' : navigation.find((item) => item.id === page)!.title;
   return (
@@ -50,7 +56,7 @@ export function Shell({
         aria-label="Menu de navegação"
       />
       <div className="drawer-content min-w-0 min-h-screen bg-base-200">
-        <header className="navbar border-b border-base-300 bg-base-100 px-4 md:px-8 gap-3">
+        <header className="navbar flex-wrap border-b border-base-300 bg-base-100 px-4 md:px-8 gap-3">
           <button
             className="btn btn-square btn-ghost lg:hidden"
             aria-label="Abrir menu"
@@ -58,17 +64,16 @@ export function Shell({
           >
             <Menu size={20} />
           </button>
-          <div className="breadcrumbs text-sm flex-1">
-            <ul>
-              <li>
-                <span className="hidden sm:inline">Meu trabalho</span>
-                <a href="/" aria-label="WID início" className="sm:hidden">
-                  <Brand dark={dark} compact />
-                </a>
-              </li>
-              <li className="font-medium">{title}</li>
-            </ul>
+          <a href={scope.href('/')} aria-label="WID início" className="lg:hidden">
+            <Brand dark={dark} compact />
+          </a>
+          <div className="order-last w-full sm:order-none sm:w-auto sm:flex-1">
+            <label className="flex items-center gap-3 min-w-0">
+              <span className="text-xs text-base-content/60">Contexto</span>
+              <ContextFilter contexts={contexts} value={scope.context} onChange={scope.select} />
+            </label>
           </div>
+          <span className="flex-1 sm:hidden" />
           <span className="text-xs text-base-content/60 hidden sm:block">{timezone}</span>
           <ThemeToggle dark={dark} onChange={changeTheme} />
           <span className="badge badge-outline gap-2">
@@ -94,7 +99,7 @@ export function Shell({
         <div className="flex min-h-full w-60 flex-col border-r border-base-300 bg-base-100">
           <div className="flex items-center justify-between px-6 py-6">
             <a
-              href="/"
+              href={scope.href('/')}
               aria-label="WID início"
               className="flex items-center gap-2 text-xl font-bold"
             >
@@ -113,7 +118,7 @@ export function Shell({
               {navigation.map((item) => (
                 <li key={item.id}>
                   <a
-                    href={pagePaths[item.id]}
+                    href={scope.href(pagePaths[item.id])}
                     className={(page === 'task' ? 'tasks' : page) === item.id ? 'menu-active' : ''}
                     aria-current={
                       (page === 'task' ? 'tasks' : page) === item.id ? 'page' : undefined

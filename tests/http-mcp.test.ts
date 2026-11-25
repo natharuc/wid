@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -18,6 +18,11 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
   const directory = await mkdtemp(join(tmpdir(), 'wid-http-test-'));
   const db = await openDatabase(join(directory, 'pg'));
   await writeFile(join(directory, 'index.html'), '<!doctype html><title>WID test shell</title>');
+  await mkdir(join(directory, 'agents'));
+  await writeFile(
+    join(directory, 'agents', 'copilot.svg'),
+    '<svg xmlns="http://www.w3.org/2000/svg"/>',
+  );
   await migrate(db);
   const settings = new SettingsStore(directory);
   await settings.update((current) => ({ ...current, agents: { ...current.agents, codex: true } }));
@@ -192,6 +197,13 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
       totals: { humanMinutes: number };
     };
     assert.equal(detail.task.references.length, 2);
+    const scopedDetail = await fetch(
+      `${url}/api/tasks/${created.task.id}?context=${encodeURIComponent('pesquisa / cliente a')}`,
+    );
+    assert.equal(scopedDetail.status, 200);
+    const wrongContext = await fetch(`${url}/api/tasks/${created.task.id}?context=OUTROS`);
+    assert.equal(wrongContext.status, 404);
+    assert.deepEqual(await wrongContext.json(), { error: 'Tarefa não encontrada neste contexto.' });
     assert.equal(detail.totals.humanMinutes, 90);
     assert.ok(detail.events.every((event) => event.taskId === created.task.id));
     assert.equal((await fetch(`${url}/api/tasks/${randomUUID()}`)).status, 404);
@@ -200,6 +212,9 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     assert.equal(page.status, 200);
     assert.match(await page.text(), /WID test shell/);
     assert.equal((await fetch(`${url}/tasks`)).status, 200);
+    const agentsPage = await fetch(`${url}/agents?context=MAG`, { redirect: 'manual' });
+    assert.equal(agentsPage.status, 200);
+    assert.equal((await fetch(`${url}/agents/copilot.svg`)).status, 200);
     assert.equal((await fetch(`${url}/assets/missing.js`)).status, 404);
     await settings.update((current) => ({
       ...current,

@@ -1,6 +1,7 @@
 import { ArrowUpRight } from 'lucide-react';
 import { hours, kindLabel, statusLabel, type Task, type WorkEvent } from './api';
 import { taskPath } from './navigation';
+import { useWorkContext } from './WorkContext';
 const stateClasses: Record<Task['status'], string> = {
   planned: 'badge-ghost',
   active: 'badge-info',
@@ -38,10 +39,11 @@ export function TaskRow({
   time?: number;
   showTime: boolean;
 }) {
+  const { href } = useWorkContext();
   return (
     <tr className="hover:bg-base-200/50">
       <td className="min-w-40">
-        <a className="link link-hover text-left font-medium" href={taskPath(task.id)}>
+        <a className="link link-hover text-left font-medium" href={href(taskPath(task.id))}>
           {task.title}
         </a>
         <p className="text-xs text-base-content/60 mt-1">
@@ -72,6 +74,7 @@ export function TimelineEvent({
   task?: Task;
   timezone: string;
 }) {
+  const { href } = useWorkContext();
   const confidence =
     event.effort?.confidence &&
     { low: 'baixa', medium: 'média', high: 'alta' }[event.effort.confidence];
@@ -115,7 +118,7 @@ export function TimelineEvent({
             {event.previousContext} → {event.context}
           </p>
         )}
-        <a className="btn btn-ghost btn-xs" href={taskPath(event.taskId)}>
+        <a className="btn btn-ghost btn-xs" href={href(taskPath(event.taskId))}>
           Abrir tarefa
           <ArrowUpRight size={13} />
         </a>

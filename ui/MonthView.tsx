@@ -1,6 +1,7 @@
 import { Download, Info } from 'lucide-react';
 import { hours, type MonthReport } from './api';
 import { Metric } from './WorkComponents';
+import { contextQuery } from './context-scope';
 export function MonthView({
   monthly,
   month,
@@ -27,7 +28,7 @@ export function MonthView({
         />
         <span className="badge badge-warning badge-soft">Cobertura parcial</span>
         <a
-          href={`/api/export${context ? `?context=${encodeURIComponent(context)}` : ''}`}
+          href={`/api/export${contextQuery(context)}`}
           download
           className="btn btn-outline btn-sm sm:ml-auto"
         >

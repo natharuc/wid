@@ -8,6 +8,7 @@ import {
   type Snapshot,
 } from './api';
 import type { ContextSummary } from '../src/domain/context';
+import { contextQuery } from './context-scope';
 export function useDashboard(day: string, month: string, context: string) {
   const [snapshot, setSnapshot] = useState<Snapshot>({ tasks: [], events: [] });
   const [settings, setSettings] = useState<Settings>();
@@ -20,7 +21,7 @@ export function useDashboard(day: string, month: string, context: string) {
   const revision = useRef(0);
   const reload = useCallback(async () => {
     const current = ++revision.current;
-    const suffix = context ? `?context=${encodeURIComponent(context)}` : '';
+    const suffix = contextQuery(context);
     const [data, config, clients, dayData, monthData, groups] = await Promise.all([
       api<Snapshot>(`snapshot${suffix}`),
       api<Settings>('settings'),

@@ -30,7 +30,7 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.4.0 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.5.0 está distribuída pelo GitHub; não está publicada no registro npm.
 
 ### Atualizar a instalação
 
@@ -43,7 +43,7 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.4.0, use `https://github.com/natharuc/wid/releases/download/v0.4.0/wid.tgz`.
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.5.0, use `https://github.com/natharuc/wid/releases/download/v0.5.0/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -90,6 +90,10 @@ wid report 2026-11
 ```
 
 ## Contextos dinâmicos
+
+O seletor no cabeçalho define o contexto de trabalho para toda a navegação. Tarefas, contadores, histórico, horas diárias/mensais, páginas de detalhe e exportações seguem a seleção. A escolha fica na URL e é lembrada no navegador; links internos preservam o escopo, inclusive em outra aba. `Todos os contextos` é uma opção explícita. Um contexto sem tarefas continua vazio, sem ampliar silenciosamente a consulta. Ao trocar de contexto numa página de tarefa, o painel abre a lista do novo grupo. A página de detalhe também verifica o contexto na API e não retorna dados de outro grupo.
+
+Fuso horário e ativação de agentes continuam gerais. GitHub, Azure DevOps, Slack e outras ferramentas são referências por tarefa; não há configuração global de ferramenta. O contexto escolhido no painel filtra a visualização; cada agente continua escolhendo e enviando o contexto da tarefa pelo MCP.
 
 O agente decide o contexto de cada tarefa, separado de empresa e projeto. **Não existe uma lista fechada nem um cadastro obrigatório.** `MAG`, `POLLARIS`, `SEDUCAO` e `OUTROS` são exemplos; `Pesquisa / Cliente Á` ou qualquer outro nome também é válido.
 
@@ -164,7 +168,7 @@ Exemplo de `wid_estimate_day`:
 }
 ```
 
-O stdio inicia o servidor local em background quando necessário; só esse servidor abre o banco embutido. Outros clientes podem usar `http://127.0.0.1:4318/mcp/codex` (ou `/claude`, `/cursor`) com o respectivo agente ativado. O serviço não escuta na rede externa.
+O stdio inicia o servidor local em background quando necessário; só esse servidor abre o banco embutido. Outros clientes podem usar `http://127.0.0.1:4318/mcp/{agente}` com o respectivo agente ativado: `codex`, `claude`, `cursor`, `copilot`, `gemini` ou `opencode`. O serviço não escuta na rede externa.
 
 O MCP fornece instruções de uso, mas **o agente precisa segui-las**. A versão inicial não intercepta todas as conversas nem garante registro por todos os clientes. O hook do Claude é um lembrete, não um coletor de transcrições nem um medidor de tempo. Clientes em nuvem não acessam este localhost.
 
@@ -177,9 +181,19 @@ O WID altera somente sua própria entrada e blocos marcados. Uma entrada `wid` d
 | Codex | `$CODEX_HOME/config.toml` ou `~/.codex/config.toml` | Bloco marcado no `AGENTS.md` global. |
 | Claude Code | `~/.claude.json` | Bloco marcado no `~/.claude/CLAUDE.md`. |
 | Cursor | `~/.cursor/mcp.json` | Orientações enviadas pelo próprio MCP. |
+| GitHub Copilot | `$COPILOT_HOME/mcp-config.json` ou `~/.copilot/mcp-config.json` | Orientações MCP. CLI e harness Copilot do VS Code; não configura o antigo MCP do perfil do editor. |
+| Gemini CLI | `~/.gemini/settings.json` | Orientações MCP. |
+| OpenCode 2 | `~/.config/opencode/opencode.json` ou `.jsonc` existente | Orientações MCP; entrada em `mcp.servers`. Formato legado não é migrado. |
+
+Os adaptadores JSON preservam comentários JSONC e configurações de outros servidores. A configuração de clientes é validada com diretórios temporários e o protocolo MCP é testado localmente; a execução dentro de cada aplicativo depende de sua instalação, permissões e políticas. A detecção usa diretórios/configurações, executáveis e a extensão Copilot do VS Code, sem varrer conversas. Nenhum agente novo é ativado automaticamente.
+
+Formatos verificados nas documentações de [Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers), [VS Code](https://code.visualstudio.com/docs/agents/reference/mcp-configuration), [Gemini CLI](https://geminicli.com/docs/tools/mcp-server/) e [OpenCode](https://opencode.ai/docs/mcp-servers/). Logotipos SVG identificam os clientes; fonte e licença em `ui/public/agents/`.
 
 ```sh
 wid agent codex --disable
+wid agent copilot
+wid agent gemini
+wid agent opencode
 wid hook-install claude
 wid hook-install claude --disable
 ```

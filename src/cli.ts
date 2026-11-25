@@ -25,7 +25,7 @@ async function main() {
   const { settings, agents } = composition(directory);
   if (values.help || command === 'help')
     return console.log(
-      `wid — what I did?\n\nwid start [--background]   Local dashboard and MCP\nwid setup                Detect agents; no automatic config writes\nwid agent <codex|claude|cursor> [--disable]\nwid hook-install claude [--disable]  Optional SessionStart reminder\nwid mcp --agent <id>      MCP stdio; starts local server if needed\nwid report [YYYY-MM]     Recorded human time and coverage\nwid status\nwid stop\n\n--data-dir <path>         Persistent data directory\nWID_DATABASE_URL         Optional external PostgreSQL database\nNo network exposure, telemetry or transcript collection.`,
+      `wid — what I did?\n\nwid start [--background]   Local dashboard and MCP\nwid setup                Detect agents; no automatic config writes\nwid agent <${agentIds.join('|')}> [--disable]\nwid hook-install claude [--disable]  Optional SessionStart reminder\nwid mcp --agent <id>      MCP stdio; starts local server if needed\nwid report [YYYY-MM]     Recorded human time and coverage\nwid status\nwid stop\n\n--data-dir <path>         Persistent data directory\nWID_DATABASE_URL         Optional external PostgreSQL database\nNo network exposure, telemetry or transcript collection.`,
     );
   switch (command) {
     case 'setup':

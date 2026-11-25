@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from 'react';
-import { Download, Info, Terminal } from 'lucide-react';
+import { Download, Info } from 'lucide-react';
 import { api, type Agent, type Settings } from './api';
 import { FormField } from './FormField';
+import { useWorkContext } from './WorkContext';
+import { contextQuery } from './context-scope';
 export function AgentsView({
   agents,
   reload,
@@ -41,13 +43,18 @@ export function AgentsView({
           <ul className="list">
             {agents.map((agent) => (
               <li className="list-row items-center px-0" key={agent.id}>
-                <div className="avatar avatar-placeholder">
-                  <div className="bg-base-200 text-base-content rounded-box w-10">
-                    <Terminal size={20} />
+                <div className="avatar">
+                  <div className="bg-white border border-base-300 rounded-box w-12 h-12 p-2">
+                    <img
+                      src={`/agents/${agent.id}.svg`}
+                      alt={`Logotipo ${agent.name}`}
+                      className="w-full h-full object-contain"
+                    />
                   </div>
                 </div>
                 <div className="list-col-grow">
                   <h3 className="font-semibold">{agent.name}</h3>
+                  <p className="text-xs text-base-content/60">{agent.description}</p>
                   <p className="text-xs text-base-content/60 mt-1">
                     {agent.rules === 'MCP instructions'
                       ? 'Orientações fornecidas pelo MCP'
@@ -82,7 +89,8 @@ export function AgentsView({
         <Info size={20} />
         <p className="text-sm">
           Abra uma nova sessão após ativar. O WID configura sua entrada MCP e, quando suportado, as
-          instruções globais. A desativação remove apenas a integração do WID.
+          instruções globais. A desativação remove apenas a integração do WID. A ativação dos
+          agentes vale para todos os contextos.
         </p>
       </div>
     </>
@@ -96,6 +104,7 @@ export function SettingsView({
   onSaved: () => Promise<void>;
 }) {
   const [message, setMessage] = useState('');
+  const { context } = useWorkContext();
   const [busy, setBusy] = useState(false);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -106,7 +115,6 @@ export function SettingsView({
         'settings',
         {
           timezone: form.get('timezone'),
-          integrations: { github: form.get('github'), azureDevOps: form.get('azureDevOps') },
         },
         'PUT',
       );
@@ -122,7 +130,7 @@ export function SettingsView({
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
       <section className="card border border-base-300 bg-base-100 xl:col-span-2">
         <form onSubmit={submit} className="card-body p-4 sm:p-6 gap-4">
-          <h2 className="card-title text-base">Datas e referências</h2>
+          <h2 className="card-title text-base">Fuso horário</h2>
           <FormField label="Fuso horário">
             <input
               className="input w-full"
@@ -131,27 +139,9 @@ export function SettingsView({
               required
             />
           </FormField>
-          <FormField label="GitHub">
-            <input
-              className="input w-full"
-              type="url"
-              name="github"
-              defaultValue={settings.integrations.github}
-              placeholder="https://github.com/seu-usuario"
-            />
-          </FormField>
-          <FormField label="Azure DevOps">
-            <input
-              className="input w-full"
-              type="url"
-              name="azureDevOps"
-              defaultValue={settings.integrations.azureDevOps}
-              placeholder="https://dev.azure.com/sua-organizacao"
-            />
-          </FormField>
           <p className="text-xs text-base-content/60">
-            Os endereços são atalhos de consulta. Esta versão não sincroniza dados com essas
-            ferramentas.
+            O fuso horário vale para todos os contextos. Ferramentas e links são registrados em cada
+            tarefa.
           </p>
           <div className="card-actions mt-3">
             <button className="btn btn-primary" disabled={busy}>
@@ -171,7 +161,7 @@ export function SettingsView({
           <p className="text-sm text-base-content/60">
             Tarefas, eventos, fontes, horários e estimativas em JSON.
           </p>
-          <a href="/api/export" download className="btn btn-outline">
+          <a href={`/api/export${contextQuery(context)}`} download className="btn btn-outline">
             <Download size={16} />
             Exportar JSON
           </a>

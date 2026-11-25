@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Info, X } from 'lucide-react';
 import { localDay, isCalendarDay } from '../src/domain/time';
 import { type Task } from './api';
@@ -11,7 +11,7 @@ import { Shell } from './Shell';
 import { pageFromPath } from './navigation';
 import { TaskDetailPage } from './TaskDetailPage';
 import { useDashboard } from './useDashboard';
-import { ContextFilter } from './ContextControls';
+import { useWorkContext } from './WorkContext';
 import { contextKey, DEFAULT_CONTEXT } from '../src/domain/context';
 export function App() {
   const page = pageFromPath(window.location.pathname);
@@ -21,7 +21,7 @@ export function App() {
   );
   const [month, setMonth] = useState(day.slice(0, 7));
   const [dialog, setDialog] = useState<Task | 'new' | null>(null);
-  const [context, setContext] = useState('');
+  const { context, href } = useWorkContext();
   const {
     snapshot,
     settings,
@@ -35,15 +35,11 @@ export function App() {
     reload,
   } = useDashboard(day, month, context);
   const activeContext =
-    contexts.find((item) => contextKey(item.name) === context)?.name ?? DEFAULT_CONTEXT;
-  useEffect(() => {
-    if (!loading && context && !contexts.some((item) => contextKey(item.name) === context)) {
-      setContext('');
-    }
-  }, [context, contexts, loading]);
+    contexts.find((item) => contextKey(item.name) === contextKey(context))?.name ??
+    (context || DEFAULT_CONTEXT);
   const timezone = settings?.timezone ?? 'America/Sao_Paulo';
   const chooseDay = (day: string) => {
-    window.location.assign(`/?day=${day}`);
+    window.location.assign(href(`/?day=${day}`));
   };
   return (
     <>
@@ -51,14 +47,9 @@ export function App() {
         page={page}
         taskCount={snapshot.tasks.length}
         timezone={timezone}
+        contexts={contexts}
         newTask={() => setDialog('new')}
       >
-        {['day', 'tasks', 'month'].includes(page) && (
-          <div className="flex flex-wrap items-center gap-3">
-            <ContextFilter contexts={contexts} value={context} onChange={setContext} />
-            <span className="text-xs text-base-content/60">Tarefas e horas por contexto</span>
-          </div>
-        )}
         {notice && (
           <div className="alert alert-soft alert-info" role="status">
             <Info size={20} />

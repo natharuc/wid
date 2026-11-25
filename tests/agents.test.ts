@@ -6,6 +6,8 @@ import { join } from 'node:path';
 import { parse } from 'smol-toml';
 import { SettingsStore } from '../src/infrastructure/settings.js';
 import { AgentManager } from '../src/infrastructure/agents.js';
+import { agentPaths } from '../src/infrastructure/agent-catalog.js';
+import { parse as parseJsonc } from 'jsonc-parser';
 
 test('agent activation preserves other MCP entries and removes only WID, repeatedly', async () => {
   const home = await mkdtemp(join(tmpdir(), 'wid-agent-test-'));
@@ -96,6 +98,73 @@ test('optional Claude SessionStart reminder merges and removes just its own hook
     assert.equal(settings.hooks.SessionStart.length, 1);
     assert.equal(settings.hooks.SessionStart[0].hooks[0].command, 'existing-hook');
     assert.equal(settings.hooks.Stop[0].hooks[0].command, 'stop-hook');
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});
+
+test('Copilot, Gemini and OpenCode configurations preserve JSONC, other servers and ownership', async () => {
+  const home = await mkdtemp(join(tmpdir(), 'wid-market-agents-'));
+  const settings = new SettingsStore(join(home, 'data'));
+  const manager = new AgentManager(settings, '/wid/cli.js', home, '/node');
+  try {
+    for (const id of ['copilot', 'gemini', 'opencode'] as const) {
+      const paths = await agentPaths(id, home);
+      await mkdir(paths.directory, { recursive: true });
+      const source =
+        id === 'opencode'
+          ? '{\n // Keep this comment\n "model":"example/model", "mcp":{"servers":{"existing":{"type":"local","command":["other"]}}},\n}'
+          : '{\n // Keep this comment\n "theme":"dark", "mcpServers":{"existing":{"command":"other"}},\n}';
+      await writeFile(paths.config, source);
+      await manager.setEnabled(id, true);
+      await manager.setEnabled(id, true);
+      const enabled = await readFile(paths.config, 'utf8');
+      assert.match(enabled, /Keep this comment/);
+      const parsed = parseJsonc(enabled);
+      const servers = id === 'opencode' ? parsed.mcp.servers : parsed.mcpServers;
+      const entry = servers.wid;
+      assert.ok(servers.existing);
+      assert.equal((await settings.read()).agents[id], true);
+      if (id === 'opencode')
+        assert.deepEqual(entry.command, [
+          '/node',
+          '/wid/cli.js',
+          'mcp',
+          '--agent',
+          id,
+          '--data-dir',
+          settings.directory,
+        ]);
+      else assert.equal(entry.args[3], id);
+      if (id === 'copilot') {
+        assert.equal(entry.type, 'local');
+        assert.deepEqual(entry.tools, ['*']);
+      }
+      await manager.setEnabled(id, false);
+      const disabled = await readFile(paths.config, 'utf8');
+      assert.match(disabled, /Keep this comment/);
+      assert.equal(
+        (id === 'opencode' ? parseJsonc(disabled).mcp.servers : parseJsonc(disabled).mcpServers)
+          .wid,
+        undefined,
+      );
+      assert.equal((await settings.read()).agents[id], false);
+      const conflict =
+        id === 'opencode'
+          ? '{"mcp":{"servers":{"wid":{"type":"local","command":["other"]}}}}'
+          : '{"mcpServers":{"wid":{"command":"other"}}}';
+      await writeFile(paths.config, conflict);
+      await assert.rejects(manager.setEnabled(id, true), /outra instalação/);
+      assert.equal(await readFile(paths.config, 'utf8'), conflict);
+    }
+    assert.equal((await manager.list()).length, 6);
+    const paths = await agentPaths('opencode', home);
+    await writeFile(paths.config, '{"mcp":{"existing":{"type":"local","command":["other"]}}}');
+    await assert.rejects(manager.setEnabled('opencode', true), /OpenCode 2/);
+    const copilot = await agentPaths('copilot', home);
+    await writeFile(copilot.config, '{ invalid json');
+    await assert.rejects(manager.setEnabled('copilot', true), /inválida/);
+    assert.equal(await readFile(copilot.config, 'utf8'), '{ invalid json');
   } finally {
     await rm(home, { recursive: true, force: true });
   }

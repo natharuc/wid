@@ -1,4 +1,4 @@
-import { access, mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 import { parse } from 'smol-toml';
@@ -11,17 +11,11 @@ import {
   type SettingsStore,
 } from './settings.js';
 import { ruleBlock } from './agent-rules.js';
+import { agentCatalog, agentPaths, exists, hasCopilotExtension } from './agent-catalog.js';
+import { editServerConfig } from './json-agent-config.js';
 
 const tomlMarker = /\n?# wid:begin\r?\n[\s\S]*?# wid:end\r?\n?/g;
 const ruleMarker = /\n?<!-- wid:begin -->\r?\n[\s\S]*?<!-- wid:end -->\r?\n?/g;
-async function exists(path: string) {
-  try {
-    await access(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
 export class AgentManager {
   constructor(
     private readonly settings: SettingsStore,
@@ -29,43 +23,22 @@ export class AgentManager {
     private readonly home = homedir(),
     private readonly nodePath = process.execPath,
   ) {}
-  private paths(id: AgentId) {
-    const codex =
-      process.env.CODEX_HOME && this.home === homedir()
-        ? process.env.CODEX_HOME
-        : join(this.home, '.codex');
-    if (id === 'codex')
-      return {
-        config: join(codex, 'config.toml'),
-        rules: join(codex, 'AGENTS.md'),
-        directory: codex,
-      };
-    if (id === 'claude')
-      return {
-        config: join(this.home, '.claude.json'),
-        rules: join(this.home, '.claude', 'CLAUDE.md'),
-        directory: join(this.home, '.claude'),
-      };
-    return {
-      config: join(this.home, '.cursor', 'mcp.json'),
-      directory: join(this.home, '.cursor'),
-    };
-  }
   async list() {
     const settings = await this.settings.read();
     return Promise.all(
       agentIds.map(async (id) => {
-        const paths = this.paths(id);
+        const paths = await agentPaths(id, this.home);
         const installed =
           (await exists(paths.config)) ||
           (await exists(paths.directory)) ||
+          (id === 'copilot' && (await hasCopilotExtension(this.home))) ||
           (await this.onPath(id === 'claude' ? 'claude' : id));
         return {
           id,
-          name: { codex: 'Codex', claude: 'Claude Code', cursor: 'Cursor' }[id],
+          ...agentCatalog[id],
           detected: installed,
           enabled: settings.agents[id],
-          rules: id === 'cursor' ? 'MCP instructions' : 'Global instructions',
+          rules: paths.rules ? 'Global instructions' : 'MCP instructions',
           hook: id === 'claude' ? 'SessionStart (opt-in CLI)' : null,
           configPath: paths.config,
         };
@@ -74,7 +47,8 @@ export class AgentManager {
   }
   async setEnabled(id: AgentId, enabled: boolean) {
     return this.settings.update(async (settings) => {
-      const paths = this.paths(id);
+      const paths = await agentPaths(id, this.home);
+      if (paths.conflict) throw new WorkError(paths.conflict, 409);
       const original = await readOptional(paths.config);
       const entry = {
         command: this.nodePath,
@@ -99,14 +73,18 @@ export class AgentManager {
           : clean;
         parse(updated);
       } else {
-        const parsed = original ? JSON.parse(original) : {};
-        const previous = parsed.mcpServers?.wid;
-        if (previous && !this.ownedEntry(previous))
-          throw new WorkError('Já existe uma entrada wid de outra instalação.', 409);
-        parsed.mcpServers ??= {};
-        if (enabled) parsed.mcpServers.wid = entry;
-        else delete parsed.mcpServers.wid;
-        updated = JSON.stringify(parsed, null, 2) + '\n';
+        const configured =
+          id === 'copilot'
+            ? { ...entry, type: 'local', tools: ['*'] }
+            : id === 'opencode'
+              ? { type: 'local', command: [entry.command, ...entry.args] }
+              : entry;
+        updated = editServerConfig(
+          original,
+          paths.serverPath,
+          enabled ? configured : undefined,
+          (value) => this.ownedEntry(value),
+        );
       }
       const changes = [{ path: paths.config, before: original, after: updated }];
       if (paths.rules) {
@@ -118,7 +96,7 @@ export class AgentManager {
           after: enabled ? `${clean.trimEnd()}\n\n${ruleBlock}\n` : clean,
         });
       }
-      await this.applyChanges(changes);
+      await this.applyChanges(changes.filter((change) => change.before !== change.after));
       settings.agents[id] = enabled;
       return settings;
     });
@@ -142,8 +120,13 @@ export class AgentManager {
       : clean;
     await this.applyChanges([{ path, before, after: JSON.stringify(parsed, null, 2) + '\n' }]);
   }
-  private ownedEntry(entry: { args?: unknown[] }) {
-    return entry.args?.[0] === this.cliPath;
+  private ownedEntry(value: unknown) {
+    if (!value || typeof value !== 'object') return false;
+    const entry = value as { args?: unknown[]; command?: unknown };
+    return (
+      entry.args?.[0] === this.cliPath ||
+      (Array.isArray(entry.command) && entry.command[1] === this.cliPath)
+    );
   }
   private async onPath(name: string) {
     for (const directory of (process.env.PATH ?? '').split(

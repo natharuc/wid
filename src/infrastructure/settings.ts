@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-export const agentIds = ['codex', 'claude', 'cursor'] as const;
+export const agentIds = ['codex', 'claude', 'cursor', 'copilot', 'gemini', 'opencode'] as const;
 export type AgentId = (typeof agentIds)[number];
 export const settingsSchema = z.object({
   port: z.number().int().min(1024).max(65535).default(4318),
@@ -23,12 +23,9 @@ export const settingsSchema = z.object({
       codex: z.boolean().default(false),
       claude: z.boolean().default(false),
       cursor: z.boolean().default(false),
-    })
-    .prefault({}),
-  integrations: z
-    .object({
-      github: z.string().url().or(z.literal('')).default(''),
-      azureDevOps: z.string().url().or(z.literal('')).default(''),
+      copilot: z.boolean().default(false),
+      gemini: z.boolean().default(false),
+      opencode: z.boolean().default(false),
     })
     .prefault({}),
 });
