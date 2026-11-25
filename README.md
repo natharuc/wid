@@ -149,7 +149,7 @@ Para adicionar links posteriormente, `wid_record_event` aceita `kind: "reference
 | `wid_list_tasks` | Buscar/reutilizar tarefas e consultar o histórico. |
 | `wid_list_contexts` | Consultar nomes dinâmicos de contextos e quantidade de tarefas para reutilizar ou criar outro nome. |
 | `wid_create_task` | Registrar a intenção de trabalho. |
-| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo, correção ou `context_changed`. |
+| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo, correção, `context_changed`, `references_added` ou `historical_note`. |
 | `wid_estimate_day` | Revisar o total humano estimado de uma tarefa/dia com justificativa e confiança. |
 | `wid_report_day` | Consultar horas por tarefa e a cobertura do dia. |
 | `wid_report_month` | Consultar o total mensal, parcelas medidas/estimadas e lacunas. |
@@ -171,6 +171,23 @@ Exemplo de `wid_estimate_day`:
 O stdio inicia o servidor local em background quando necessário; só esse servidor abre o banco embutido. Outros clientes podem usar `http://127.0.0.1:4318/mcp/{agente}` com o respectivo agente ativado: `codex`, `claude`, `cursor`, `copilot`, `gemini` ou `opencode`. O serviço não escuta na rede externa.
 
 O MCP fornece instruções de uso, mas **o agente precisa segui-las**. A versão inicial não intercepta todas as conversas nem garante registro por todos os clientes. O hook do Claude é um lembrete, não um coletor de transcrições nem um medidor de tempo. Clientes em nuvem não acessam este localhost.
+
+## Anotações históricas
+
+Para acrescentar um fato antigo a uma tarefa existente sem alterar seu estado atual, use `wid_record_event` com `kind: "historical_note"`. Funciona em tarefas planejadas, em andamento, bloqueadas, concluídas ou canceladas. `occurredAt` é obrigatório, com horário original e offset explícito; `recordedAt` continua sendo o momento real da gravação. A anotação aparece no histórico e na cobertura diária/mensal pela data original, mesmo quando os registros são enviados fora de ordem.
+
+```json
+{
+  "taskId": "UUID da tarefa existente",
+  "kind": "historical_note",
+  "note": "Validação realizada no período, conforme a referência registrada. Duração humana desconhecida.",
+  "occurredAt": "2026-11-03T10:00:00-03:00",
+  "references": [{"label": "Fonte do registro", "url": "https://example.com/evidence"}],
+  "idempotencyKey": "history:task-id:2026-11-03:validation"
+}
+```
+
+Não envie `effort`, `context` ou `correctsEventId` nessa anotação. O contexto é o da tarefa; referências históricas pertencem ao evento e não substituem os links atuais da tarefa. Tempo, quando houver evidência, usa os registros de esforço separados. Sem evidência de duração, o tempo permanece desconhecido. Uma chave idempotente repetida com o mesmo conteúdo retorna o mesmo evento; conteúdo diferente na mesma chave é recusado. Eventos comuns de ciclo de vida continuam sendo processados na ordem de gravação e não fazem replay por `occurredAt`.
 
 ## Configuração de agentes
 

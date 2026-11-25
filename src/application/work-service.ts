@@ -78,6 +78,8 @@ export class WorkService {
           if (original.kind === 'corrected')
             throw new WorkError('Corrija o evento original, não outra correção.');
         }
+        if (data.kind === 'historical_note' && Date.parse(occurredAt) > Date.parse(now))
+          throw new WorkError('Anotação histórica exige um horário já ocorrido.');
         task.status = nextStatus(task.status, data.kind);
         const previousContext = task.context;
         if (data.kind === 'context_changed') task.context = data.context!;
@@ -97,6 +99,9 @@ export class WorkService {
           correctsEventId: data.correctsEventId,
           ...(data.kind === 'context_changed' ? { context: task.context, previousContext } : {}),
           ...(data.kind === 'references_added' ? { references: data.references } : {}),
+          ...(data.kind === 'historical_note'
+            ? { references: data.references, context: task.context }
+            : {}),
         };
         await unit.append(event);
         await unit.saveTask(task);

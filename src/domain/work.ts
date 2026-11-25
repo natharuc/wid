@@ -14,6 +14,7 @@ export const eventKinds = [
   'corrected',
   'context_changed',
   'references_added',
+  'historical_note',
 ] as const;
 export const statuses = ['planned', 'active', 'blocked', 'completed', 'cancelled'] as const;
 export type Status = (typeof statuses)[number];
@@ -92,17 +93,32 @@ export const recordSchema = z
     correctsEventId: z.string().uuid().optional(),
     idempotencyKey: z.string().min(1).max(200),
     context: contextSchema.optional(),
-    references: z.array(referenceSchema).min(1).max(20).optional(),
+    references: z.array(referenceSchema).max(20).optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.kind === 'references_added' && !value.references)
+    if (value.kind === 'references_added' && !value.references?.length)
       ctx.addIssue({ code: 'custom', message: 'Informe as referências.', path: ['references'] });
-    if (value.kind !== 'references_added' && value.references)
+    if (!['references_added', 'historical_note'].includes(value.kind) && value.references)
       ctx.addIssue({
         code: 'custom',
-        message: 'Use references_added para adicionar referências.',
+        message: 'Use references_added ou historical_note para registrar referências.',
         path: ['references'],
       });
+    if (value.kind === 'historical_note') {
+      if (!value.occurredAt)
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Anotação histórica exige occurredAt com o horário original e offset.',
+          path: ['occurredAt'],
+        });
+      if (value.effort)
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'Anotação histórica não registra tempo. Use os registros de esforço separados quando houver evidência.',
+          path: ['effort'],
+        });
+    }
     if (value.kind === 'context_changed' && !value.context)
       ctx.addIssue({ code: 'custom', message: 'Informe o novo contexto.', path: ['context'] });
     if (value.kind !== 'context_changed' && value.context)
@@ -172,6 +188,7 @@ export interface CommandResult {
   event: WorkEvent;
 }
 export function nextStatus(current: Status, kind: WorkEvent['kind']): Status {
+  if (kind === 'historical_note') return current;
   if (
     (current === 'completed' || current === 'cancelled') &&
     ['started', 'progressed', 'blocked', 'completed', 'cancelled'].includes(kind)

@@ -148,7 +148,11 @@ export function TimelineEvent({
             </div>
           )}
         </dl>
-        {task?.references.map((ref) => (
+        {[
+          ...new Map(
+            [...(task?.references ?? []), ...(event.references ?? [])].map((ref) => [ref.url, ref]),
+          ).values(),
+        ].map((ref) => (
           <a
             key={ref.url}
             href={ref.url}

@@ -216,6 +216,65 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     assert.equal(agentsPage.status, 200);
     assert.equal((await fetch(`${url}/agents/copilot.svg`)).status, 200);
     assert.equal((await fetch(`${url}/assets/missing.js`)).status, 404);
+    const recordTool = tools.tools.find((tool) => tool.name === 'wid_record_event')!;
+    const recordProperties = recordTool.inputSchema.properties as Record<
+      string,
+      { enum?: string[] }
+    >;
+    assert.ok(recordProperties.kind.enum?.includes('historical_note'));
+    await client.callTool({
+      name: 'wid_record_event',
+      arguments: {
+        taskId: created.task.id,
+        kind: 'completed',
+        note: 'Current completion',
+        idempotencyKey: 'history-fixture-complete',
+      },
+    });
+    const historyInput = {
+      taskId: created.task.id,
+      kind: 'historical_note',
+      note: 'Past fact, time unknown',
+      occurredAt: '2026-11-04T01:15:00Z',
+      references: [{ label: 'Source', url: 'https://example.com/evidence' }],
+      idempotencyKey: 'history-mcp',
+    };
+    const history = decode(
+      await client.callTool({ name: 'wid_record_event', arguments: historyInput }),
+    );
+    assert.equal(history.task.status, 'completed');
+    assert.equal(history.event.kind, 'historical_note');
+    assert.equal(history.event.references[0].label, 'Source');
+    assert.equal(
+      decode(await client.callTool({ name: 'wid_record_event', arguments: historyInput })).event.id,
+      history.event.id,
+    );
+    const missingDate = await client.callTool({
+      name: 'wid_record_event',
+      arguments: { ...historyInput, occurredAt: undefined, idempotencyKey: 'history-missing-date' },
+    });
+    assert.equal(missingDate.isError, true);
+    const historicDay = decode(
+      await client.callTool({
+        name: 'wid_report_day',
+        arguments: { day: '2026-11-03', context: 'Pesquisa / Cliente Á' },
+      }),
+    );
+    assert.equal(historicDay.events, 1);
+    assert.equal(historicDay.humanMinutes, 0);
+    const historicMonth = decode(
+      await client.callTool({
+        name: 'wid_report_month',
+        arguments: { month: '2026-11', context: 'Pesquisa / Cliente Á' },
+      }),
+    );
+    assert.equal(historicMonth.totals.humanMinutes, 90);
+    const historyDetail = (await (await fetch(`${url}/api/tasks/${created.task.id}`)).json()) as {
+      events: { kind: string }[];
+      task: { status: string };
+    };
+    assert.equal(historyDetail.task.status, 'completed');
+    assert.ok(historyDetail.events.some((event) => event.kind === 'historical_note'));
     await settings.update((current) => ({
       ...current,
       agents: { ...current.agents, codex: false },

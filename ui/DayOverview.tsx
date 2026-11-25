@@ -57,8 +57,12 @@ export function DayOverview({
       <div className="stats stats-vertical md:stats-horizontal w-full border border-base-300 bg-base-100">
         <Metric
           label="Horas humanas registradas"
-          value={hours(daily?.humanMinutes ?? 0)}
-          description={`${hours(daily?.minutes.human_measured ?? 0)} medidas · ${hours(daily?.minutes.human_estimated ?? 0)} estimadas`}
+          value={daily?.humanTimeRecorded ? hours(daily.humanMinutes) : '—'}
+          description={
+            daily?.humanTimeRecorded
+              ? `${hours(daily.minutes.human_measured)} medidas · ${hours(daily.minutes.human_estimated)} estimadas`
+              : 'Tempo humano desconhecido'
+          }
           accent
         />
         <Metric

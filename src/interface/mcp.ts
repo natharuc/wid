@@ -57,7 +57,7 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_record_event',
     {
       description:
-        'Append progress, decision, blocker, completion, correction or cumulative task/day effort. Add external links to an existing task with kind=references_added and references=[{label,url}]; use actual URLs to Azure DevOps, GitHub, Slack or chats, without recreating the task. To assign/change context, use kind=context_changed and context; this regroups all history and preserves an audit event. Effort snapshots replace prior same task/day/category totals. Human measured minutes require explicit user measurement.',
+        'Append work events. For retrospective facts on any existing task, including completed/cancelled, use kind=historical_note with taskId, note, original occurredAt (explicit UTC offset), idempotencyKey and optional references=[{label,url}], sessionId/chatUrl. It NEVER changes current status or records effort; references belong to that historical event. Do not disguise past facts as lifecycle events. Add current task links with kind=references_added and references. Change grouping with kind=context_changed and context. Effort snapshots replace prior task/day/category totals; human measured minutes require explicit user measurement.',
       inputSchema: { ...recordSchema.shape, ...identity },
     },
     (input) =>
