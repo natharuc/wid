@@ -1,5 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import { ThemeToggle } from './ThemeToggle';
+import { useTheme } from './useTheme';
+import { Brand } from './Brand';
 import {
   ArrowUpRight,
   Bot,
@@ -36,6 +38,7 @@ export function Shell({
   children: ReactNode;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { dark, changeTheme } = useTheme();
   const title = navigation.find((item) => item.id === page)!.title;
   const navigate = (value: Page) => {
     setPage(value);
@@ -62,12 +65,17 @@ export function Shell({
           </button>
           <div className="breadcrumbs text-sm flex-1">
             <ul>
-              <li>Meu trabalho</li>
+              <li>
+                <span className="hidden sm:inline">Meu trabalho</span>
+                <a href="/" aria-label="WID início" className="sm:hidden">
+                  <Brand dark={dark} compact />
+                </a>
+              </li>
               <li className="font-medium">{title}</li>
             </ul>
           </div>
           <span className="text-xs text-base-content/60 hidden sm:block">{timezone}</span>
-          <ThemeToggle />
+          <ThemeToggle dark={dark} onChange={changeTheme} />
           <span className="badge badge-outline gap-2">
             <span className="status status-success" />
             Local
@@ -93,8 +101,7 @@ export function Shell({
               aria-label="WID início"
               className="flex items-center gap-2 text-xl font-bold"
             >
-              <CheckSquare2 className="text-primary" size={25} />
-              wid
+              <Brand dark={dark} />
             </a>
             <button
               className="btn btn-ghost btn-square btn-sm lg:hidden"

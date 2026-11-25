@@ -7,16 +7,23 @@ import {
   type WorkEvent,
 } from '../domain/work.js';
 import type { Database, Queryable } from './database.js';
+import { DEFAULT_CONTEXT } from '../domain/context.js';
+
+type StoredTask = Omit<Task, 'context'> & { context?: string };
+function hydrate(task: StoredTask): Task {
+  return { ...task, context: task.context ?? DEFAULT_CONTEXT };
+}
 
 class SqlWorkUnit implements WorkUnit {
   constructor(private readonly db: Queryable) {}
   async task(id: string) {
-    return (
-      await this.db.query<{ document: Task }>(
+    const row = (
+      await this.db.query<{ document: StoredTask }>(
         'SELECT document FROM wid_tasks WHERE id=$1 FOR UPDATE',
         [id],
       )
     ).rows[0]?.document;
+    return row ? hydrate(row) : undefined;
   }
   async saveTask(task: Task, create = false) {
     await this.db.query(
@@ -74,7 +81,7 @@ export class SqlWorkStore implements WorkStore {
         ).rows[0];
         if (prior.fingerprint !== fingerprint)
           throw new WorkError('Chave idempotente já usada com conteúdo diferente.', 409);
-        return prior.result;
+        return { ...prior.result, task: hydrate(prior.result.task) };
       }
       const result = await action(new SqlWorkUnit(tx));
       await tx.query('UPDATE wid_commands SET result=$3 WHERE source=$1 AND key=$2', [
@@ -87,10 +94,10 @@ export class SqlWorkStore implements WorkStore {
   }
   async tasks() {
     return (
-      await this.db.query<{ document: Task }>(
+      await this.db.query<{ document: StoredTask }>(
         "SELECT document FROM wid_tasks ORDER BY document->>'updatedAt' DESC",
       )
-    ).rows.map((row) => row.document);
+    ).rows.map((row) => hydrate(row.document));
   }
   async events() {
     return (

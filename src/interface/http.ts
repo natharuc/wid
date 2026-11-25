@@ -3,7 +3,14 @@ import { resolve } from 'node:path';
 import { z, ZodError } from 'zod';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import type { WorkService } from '../application/work-service.js';
-import { daySchema, monthReport, sourceSchema, summarize, WorkError } from '../domain/work.js';
+import {
+  contextSchema,
+  daySchema,
+  monthReport,
+  sourceSchema,
+  summarize,
+  WorkError,
+} from '../domain/work.js';
 import { agentIds, type AgentId, type SettingsStore } from '../infrastructure/settings.js';
 import type { AgentManager } from '../infrastructure/agents.js';
 import { makeMcp, type WorkGateway } from './mcp.js';
@@ -46,17 +53,20 @@ export function createApp(options: {
   const gateway: WorkGateway = {
     create: (input, source) => work.create(input, source),
     record: (input, source) => work.record(input, source),
-    snapshot: () => work.snapshot(),
-    day: async (day) => {
-      const snapshot = await work.snapshot();
+    snapshot: (context) => work.snapshot(context),
+    contexts: () => work.contexts(),
+    day: async (day, context) => {
+      const snapshot = await work.snapshot(context);
       return {
+        context: context ?? null,
         ...summarize(snapshot.events, daySchema.parse(day), (await settings.read()).timezone),
         taskDetails: snapshot.tasks,
       };
     },
-    month: async (month) => {
-      const snapshot = await work.snapshot();
+    month: async (month, context) => {
+      const snapshot = await work.snapshot(context);
       return {
+        context: context ?? null,
         ...monthReport(snapshot.events, month, (await settings.read()).timezone),
         tasks: snapshot.tasks,
       };
@@ -85,16 +95,24 @@ export function createApp(options: {
       return res.status(403).json({ error: 'WID client header required' });
     next();
   });
-  app.get('/api/snapshot', async (_req, res) => res.json(await work.snapshot()));
-  app.get('/api/day/:day', async (req, res) => res.json(await gateway.day(req.params.day)));
-  app.get('/api/month/:month', async (req, res) => res.json(await gateway.month(req.params.month)));
-  app.get('/api/export', async (_req, res) => {
+  const queryContext = (req: express.Request) => contextSchema.optional().parse(req.query.context);
+  app.get('/api/contexts', async (_req, res) => res.json(await work.contexts()));
+  app.get('/api/snapshot', async (req, res) => res.json(await work.snapshot(queryContext(req))));
+  app.get('/api/day/:day', async (req, res) =>
+    res.json(await gateway.day(req.params.day, queryContext(req))),
+  );
+  app.get('/api/month/:month', async (req, res) =>
+    res.json(await gateway.month(req.params.month, queryContext(req))),
+  );
+  app.get('/api/export', async (req, res) => {
+    const context = queryContext(req);
     res.setHeader('Content-Disposition', 'attachment; filename="wid-export.json"');
     res.json({
       format: 'wid/v1',
       exportedAt: new Date().toISOString(),
       timezone: (await settings.read()).timezone,
-      ...(await work.snapshot()),
+      context: context ?? null,
+      ...(await work.snapshot(context)),
     });
   });
   app.post('/api/tasks', async (req, res) =>
@@ -130,12 +148,15 @@ export function createApp(options: {
     await enabled(String(req.params.agent));
     next();
   });
-  app.get('/api/agent/:agent/snapshot', async (_req, res) => res.json(await work.snapshot()));
+  app.get('/api/agent/:agent/contexts', async (_req, res) => res.json(await work.contexts()));
+  app.get('/api/agent/:agent/snapshot', async (req, res) =>
+    res.json(await work.snapshot(queryContext(req))),
+  );
   app.get('/api/agent/:agent/day/:day', async (req, res) =>
-    res.json(await gateway.day(req.params.day)),
+    res.json(await gateway.day(req.params.day, queryContext(req))),
   );
   app.get('/api/agent/:agent/month/:month', async (req, res) =>
-    res.json(await gateway.month(req.params.month)),
+    res.json(await gateway.month(req.params.month, queryContext(req))),
   );
   app.post('/api/agent/:agent/tasks', async (req, res) =>
     res.json(

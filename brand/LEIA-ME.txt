@@ -1,0 +1,58 @@
+WID GEOMÉTRICO — KIT DE MARCA
+What I Did
+
+VERSÃO
+25 de novembro de 2026
+Reconstrução vetorial do conceito WID geométrico escolhido nesta conversa.
+
+1. LOGO COMPLETO
+Pasta: 01-logo
+SVG nas versões grafite, preto e branco.
+PNG transparente nas larguras de 2048 e 4096 pixels.
+As letras e os ponteiros são formas vetoriais; nenhuma fonte precisa ser instalada.
+
+2. ÍCONE
+Pasta: 02-icone
+O símbolo é o D com relógio retirado do próprio logo.
+SVG grafite, preto e branco.
+PNG transparente em 256, 512 e 1024 pixels, sempre quadrado.
+
+3. WEB E APLICATIVO
+Pasta: 03-web-app
+favicon.svg: símbolo branco em fundo grafite com cantos arredondados.
+favicon.ico: arquivo com tamanhos 16, 32, 48 e 64 pixels.
+favicon-16/32/48/64.png: versões individuais para navegador.
+Os ponteiros do favicon recebem ajuste de espessura e comprimento para leitura pequena.
+wid-app.svg e wid-app-192/512/1024.png: ícone com fundo grafite opaco e margem de segurança.
+apple-touch-icon.png: aplicação opaca de 180 × 180 pixels.
+Os ícones de aplicativo têm fundo quadrado inteiro; o sistema pode aplicar sua própria máscara.
+
+4. PRÉVIA
+Pasta: 04-previa
+Visão geral do logo e do símbolo em fundos claro e escuro.
+
+CORES
+Grafite principal: #1A1A1A / RGB 26, 26, 26.
+Preto absoluto: #000000 / RGB 0, 0, 0.
+Branco: #FFFFFF / RGB 255, 255, 255.
+Fundo claro sugerido para apresentação: #F7F7F3.
+
+COMO USAR
+Use SVG em interfaces, materiais vetoriais e aplicações que precisem de escala.
+Use PNG quando a ferramenta de destino pedir uma imagem.
+Use grafite ou preto sobre fundos claros e branco sobre fundos escuros.
+Mantenha a proporção entre largura e altura.
+Deixe ao redor do logo uma área livre de pelo menos 1/4 da altura da letra I.
+O espaço de proteção deve ser considerado na aplicação, além da margem já presente no arquivo.
+Para o logo completo abaixo de 400 pixels de largura, confira a leitura dos ponteiros.
+Nas aplicações muito pequenas, prefira o ícone e os arquivos de favicon preparados.
+
+TRANSPARÊNCIA
+Os PNGs em 01-logo e 02-icone têm transparência real, inclusive no espaço interno do D.
+O branco pode parecer vazio quando visualizado sobre branco; aplique-o em fundo escuro.
+Os arquivos de aplicativo e a prévia têm fundo intencional.
+
+ESTRUTURA VETORIAL
+Os SVGs de logo e ícone contêm caminhos vetoriais reais, sem bitmap incorporado,
+sem fonte externa, sem script e sem dependência de rede.
+Os SVGs são arquivos mestres editáveis em editores vetoriais.

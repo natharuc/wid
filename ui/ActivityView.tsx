@@ -3,6 +3,7 @@ import { History, ListTodo, Plus, Search } from 'lucide-react';
 import { localDay } from '../src/domain/time';
 import { statusLabel, type DayReport, type Snapshot, type Task } from './api';
 import { TaskRow, TimelineEvent } from './WorkComponents';
+import { contextKey, summarizeContexts } from '../src/domain/context';
 export function ActivityView({
   page,
   day,
@@ -83,17 +84,27 @@ export function ActivityView({
                     </th>
                   </tr>
                 </thead>
-                <tbody>
-                  {tasks.map((task) => (
-                    <TaskRow
-                      key={task.id}
-                      task={task}
-                      time={daily?.taskMinutes[task.id]?.humanMinutes}
-                      showTime={page === 'day'}
-                      onSelect={() => onSelect(task)}
-                    />
-                  ))}
-                </tbody>
+                {summarizeContexts(tasks).map((group) => (
+                  <tbody key={contextKey(group.name)}>
+                    <tr className="bg-base-200/50">
+                      <th colSpan={page === 'day' ? 4 : 3} scope="rowgroup">
+                        <span className="font-semibold">{group.name}</span>
+                        <span className="badge badge-ghost badge-xs ml-2">{group.taskCount}</span>
+                      </th>
+                    </tr>
+                    {tasks
+                      .filter((task) => contextKey(task.context) === contextKey(group.name))
+                      .map((task) => (
+                        <TaskRow
+                          key={task.id}
+                          task={task}
+                          time={daily?.taskMinutes[task.id]?.humanMinutes}
+                          showTime={page === 'day'}
+                          onSelect={() => onSelect(task)}
+                        />
+                      ))}
+                  </tbody>
+                ))}
               </table>
             </div>
           ) : (

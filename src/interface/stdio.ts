@@ -19,9 +19,13 @@ export async function runStdio(directory: string, agent: string) {
     {
       create: (input: unknown, source: Source) => request('tasks', { input, source }),
       record: (input: unknown, source: Source) => request('events', { input, source }),
-      snapshot: () => request('snapshot'),
-      day: (day) => request(`day/${day}`),
-      month: (month) => request(`month/${month}`),
+      snapshot: (context) =>
+        request(`snapshot${context ? `?context=${encodeURIComponent(context)}` : ''}`),
+      day: (day, context) =>
+        request(`day/${day}${context ? `?context=${encodeURIComponent(context)}` : ''}`),
+      month: (month, context) =>
+        request(`month/${month}${context ? `?context=${encodeURIComponent(context)}` : ''}`),
+      contexts: () => request('contexts'),
     },
     agent,
   );

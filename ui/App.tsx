@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Info, X } from 'lucide-react';
 import { localDay } from '../src/domain/time';
 import { type Task } from './api';
@@ -9,13 +9,33 @@ import { ActivityView } from './ActivityView';
 import { AgentsView, SettingsView } from './SettingsView';
 import { Shell, type Page } from './Shell';
 import { useDashboard } from './useDashboard';
+import { ContextFilter } from './ContextControls';
+import { contextKey, DEFAULT_CONTEXT } from '../src/domain/context';
 export function App() {
   const [page, setPage] = useState<Page>('day');
   const [day, setDay] = useState(localDay(new Date().toISOString()));
   const [month, setMonth] = useState(day.slice(0, 7));
   const [dialog, setDialog] = useState<Task | 'new' | null>(null);
-  const { snapshot, settings, agents, daily, monthly, notice, setNotice, loading, reload } =
-    useDashboard(day, month);
+  const [context, setContext] = useState('');
+  const {
+    snapshot,
+    settings,
+    agents,
+    contexts,
+    daily,
+    monthly,
+    notice,
+    setNotice,
+    loading,
+    reload,
+  } = useDashboard(day, month, context);
+  const activeContext =
+    contexts.find((item) => contextKey(item.name) === context)?.name ?? DEFAULT_CONTEXT;
+  useEffect(() => {
+    if (!loading && context && !contexts.some((item) => contextKey(item.name) === context)) {
+      setContext('');
+    }
+  }, [context, contexts, loading]);
   const timezone = settings?.timezone ?? 'America/Sao_Paulo';
   const chooseDay = (day: string) => {
     setDay(day);
@@ -30,6 +50,12 @@ export function App() {
         timezone={timezone}
         newTask={() => setDialog('new')}
       >
+        {['day', 'tasks', 'month'].includes(page) && (
+          <div className="flex flex-wrap items-center gap-3">
+            <ContextFilter contexts={contexts} value={context} onChange={setContext} />
+            <span className="text-xs text-base-content/60">Tarefas e horas por contexto</span>
+          </div>
+        )}
         {notice && (
           <div className="alert alert-soft alert-info" role="status">
             <Info size={20} />
@@ -70,6 +96,7 @@ export function App() {
                 month={month}
                 setMonth={setMonth}
                 chooseDay={chooseDay}
+                context={context}
               />
             )}
             {page === 'agents' && (
@@ -85,6 +112,8 @@ export function App() {
         <WorkDialog
           task={dialog === 'new' ? undefined : dialog}
           day={day}
+          contexts={contexts}
+          defaultContext={activeContext}
           onClose={() => setDialog(null)}
           onSaved={() => {
             void reload().catch((error) => setNotice(error.message));

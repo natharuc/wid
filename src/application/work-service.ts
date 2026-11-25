@@ -10,6 +10,7 @@ import {
   type WorkEvent,
 } from '../domain/work.js';
 import type { WorkStore } from './ports.js';
+import { contextKey, DEFAULT_CONTEXT, summarizeContexts } from '../domain/context.js';
 
 export class WorkService {
   constructor(
@@ -30,6 +31,7 @@ export class WorkService {
         const task: Task = {
           id: randomUUID(),
           title: data.title,
+          context: data.context ?? DEFAULT_CONTEXT,
           company: data.company,
           project: data.project,
           references: data.references,
@@ -45,6 +47,7 @@ export class WorkService {
           source,
           occurredAt,
           recordedAt: now,
+          context: task.context,
         };
         await unit.saveTask(task, true);
         await unit.append(event);
@@ -74,6 +77,8 @@ export class WorkService {
             throw new WorkError('Corrija o evento original, não outra correção.');
         }
         task.status = nextStatus(task.status, data.kind);
+        const previousContext = task.context;
+        if (data.kind === 'context_changed') task.context = data.context!;
         task.updatedAt = now;
         const event: WorkEvent = {
           id: randomUUID(),
@@ -85,6 +90,7 @@ export class WorkService {
           recordedAt: now,
           effort: data.effort,
           correctsEventId: data.correctsEventId,
+          ...(data.kind === 'context_changed' ? { context: task.context, previousContext } : {}),
         };
         await unit.append(event);
         await unit.saveTask(task);
@@ -92,8 +98,16 @@ export class WorkService {
       },
     );
   }
-  async snapshot() {
-    return { tasks: await this.store.tasks(), events: await this.store.events() };
+  async snapshot(context?: string) {
+    const tasks = (await this.store.tasks()).filter(
+      (task) => !context || contextKey(task.context) === contextKey(context),
+    );
+    const ids = new Set(tasks.map((task) => task.id));
+    const events = (await this.store.events()).filter((event) => ids.has(event.taskId));
+    return { tasks, events };
+  }
+  async contexts() {
+    return summarizeContexts(await this.store.tasks());
   }
   private validateTime(value: string, now: string) {
     if (Date.parse(value) > Date.parse(now) + 300_000)

@@ -6,11 +6,13 @@ export function MonthView({
   month,
   setMonth,
   chooseDay,
+  context,
 }: {
   monthly: MonthReport;
   month: string;
   setMonth: (month: string) => void;
   chooseDay: (day: string) => void;
+  context: string;
 }) {
   const offset = (new Date(`${month}-01T12:00:00Z`).getUTCDay() + 6) % 7;
   return (
@@ -24,7 +26,11 @@ export function MonthView({
           onChange={(event) => event.target.value && setMonth(event.target.value)}
         />
         <span className="badge badge-warning badge-soft">Cobertura parcial</span>
-        <a href="/api/export" download className="btn btn-outline btn-sm sm:ml-auto">
+        <a
+          href={`/api/export${context ? `?context=${encodeURIComponent(context)}` : ''}`}
+          download
+          className="btn btn-outline btn-sm sm:ml-auto"
+        >
           <Download size={16} />
           Exportar
         </a>

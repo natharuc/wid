@@ -51,7 +51,9 @@ export async function migrate(db: Database) {
     await tx.query(
       `CREATE TABLE IF NOT EXISTS wid_events (id uuid PRIMARY KEY, task_id uuid NOT NULL REFERENCES wid_tasks(id), document jsonb NOT NULL)`,
     );
-    await tx.query(`ALTER TABLE wid_events ADD COLUMN IF NOT EXISTS sequence bigint GENERATED ALWAYS AS IDENTITY`);
+    await tx.query(
+      `ALTER TABLE wid_events ADD COLUMN IF NOT EXISTS sequence bigint GENERATED ALWAYS AS IDENTITY`,
+    );
     await tx.query(`CREATE INDEX IF NOT EXISTS wid_events_task ON wid_events(task_id)`);
     await tx.query(
       `CREATE UNIQUE INDEX IF NOT EXISTS wid_event_correction ON wid_events ((document->>'correctsEventId')) WHERE document->>'correctsEventId' IS NOT NULL`,

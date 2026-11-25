@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { z } from 'zod';
 import {
   createSchema,
+  contextSchema,
   daySchema,
   recordSchema,
   sourceSchema,
@@ -13,9 +14,10 @@ import { VERSION } from '../version.js';
 export interface WorkGateway {
   create(input: unknown, source: Source): Promise<unknown>;
   record(input: unknown, source: Source): Promise<unknown>;
-  snapshot(): Promise<unknown>;
-  day(day: string): Promise<unknown>;
-  month(month: string): Promise<unknown>;
+  snapshot(context?: string): Promise<unknown>;
+  day(day: string, context?: string): Promise<unknown>;
+  month(month: string, context?: string): Promise<unknown>;
+  contexts(): Promise<unknown>;
 }
 const identity = { sessionId: sourceSchema.shape.sessionId, chatUrl: sourceSchema.shape.chatUrl };
 const estimateSchema = z.object({
@@ -43,7 +45,7 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_create_task',
     {
       description:
-        'Register user work intention. Search existing tasks first. No corporate work item required.',
+        'Register user work intention with a free-form context chosen by the agent. First consult wid_list_contexts and search existing tasks. Reuse a context name or choose a new one; examples are not an enum. Always pass context explicitly for new work. Company/project and corporate work items are optional.',
       inputSchema: createSchema.extend(identity).shape,
     },
     (input) =>
@@ -55,7 +57,7 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     'wid_record_event',
     {
       description:
-        'Append progress, decision, blocker, completion, correction or cumulative task/day effort. Effort snapshots replace prior same task/day/category totals. Human measured minutes require explicit user measurement.',
+        'Append progress, decision, blocker, completion, correction or cumulative task/day effort. To assign/change a task context, use kind=context_changed and a free-form context; this regroups all its history and preserves an audit event. Effort snapshots replace prior same task/day/category totals. Human measured minutes require explicit user measurement.',
       inputSchema: { ...recordSchema.shape, ...identity },
     },
     (input) =>
@@ -92,19 +94,22 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
   server.registerTool(
     'wid_list_tasks',
     {
-      description: 'List persistent tasks and history; reuse a matching task when resuming work.',
-      inputSchema: { query: z.string().max(200).optional() },
+      description:
+        'List persistent tasks and history, optionally filtered by free-form context; reuse matching tasks.',
+      inputSchema: { query: z.string().max(200).optional(), context: contextSchema.optional() },
     },
     (input) =>
       result(async () => {
-        const snapshot = (await gateway.snapshot()) as {
-          tasks: { id: string; title: string; company: string; project: string }[];
+        const snapshot = (await gateway.snapshot(input.context)) as {
+          tasks: { id: string; title: string; company: string; project: string; context: string }[];
           events: { taskId: string }[];
         };
         if (!input.query) return snapshot;
         const query = input.query.toLocaleLowerCase();
         const tasks = snapshot.tasks.filter((task) =>
-          `${task.title} ${task.company} ${task.project}`.toLocaleLowerCase().includes(query),
+          `${task.title} ${task.company} ${task.project} ${task.context}`
+            .toLocaleLowerCase()
+            .includes(query),
         );
         const ids = new Set(tasks.map((task) => task.id));
         return { tasks, events: snapshot.events.filter((event) => ids.has(event.taskId)) };
@@ -115,18 +120,30 @@ export function makeMcp(gateway: WorkGateway, agent: string) {
     {
       description:
         'Human time by task on local day; measured and estimated totals separate from agent/wait. Unknown coverage is not zero work.',
-      inputSchema: { day: daySchema },
+      inputSchema: { day: daySchema, context: contextSchema.optional() },
     },
-    (input) => result(() => gateway.day(input.day)),
+    (input) => result(() => gateway.day(input.day, input.context)),
   );
   server.registerTool(
     'wid_report_month',
     {
       description:
         'Answer how many hours the user worked in a month. Report recorded human total, measured/estimated portions, coverage gaps, and overlap warnings. Never claim complete coverage.',
-      inputSchema: { month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/) },
+      inputSchema: {
+        month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+        context: contextSchema.optional(),
+      },
     },
-    (input) => result(() => gateway.month(input.month)),
+    (input) => result(() => gateway.month(input.month, input.context)),
+  );
+  server.registerTool(
+    'wid_list_contexts',
+    {
+      description:
+        'List dynamic context names and task counts. There is no fixed catalog: the agent may reuse an existing name or create any new context through wid_create_task or wid_record_event kind=context_changed.',
+      inputSchema: {},
+    },
+    () => result(() => gateway.contexts()),
   );
   return server;
 }

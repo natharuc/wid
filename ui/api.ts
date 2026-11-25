@@ -44,5 +44,6 @@ export const kindLabel: Record<WorkEvent['kind'], string> = {
   cancelled: 'Tarefa cancelada',
   effort: 'Tempo registrado',
   corrected: 'Correção',
+  context_changed: 'Contexto alterado',
 };
 export type { Settings, Task, WorkEvent };

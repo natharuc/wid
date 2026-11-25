@@ -56,7 +56,13 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     assert.equal(badHost, 403);
     await client.connect(new StreamableHTTPClientTransport(new URL(`${url}/mcp/codex`)));
     const tools = await client.listTools();
-    assert.equal(tools.tools.length, 6);
+    assert.equal(tools.tools.length, 7);
+    const createTool = tools.tools.find((tool) => tool.name === 'wid_create_task')!;
+    const contextInput = (
+      createTool.inputSchema.properties as Record<string, { type?: string; enum?: unknown }>
+    ).context;
+    assert.equal(contextInput.type, 'string');
+    assert.equal(contextInput.enum, undefined);
     const decode = (result: unknown) =>
       JSON.parse((result as { content: { text: string }[] }).content[0].text);
     const created = decode(
@@ -98,6 +104,66 @@ test('real MCP roundtrip, cumulative day/month totals, agent gate and localhost 
     };
     assert.equal(exported.format, 'wid/v1');
     assert.equal(exported.events.length, 3);
+    const other = decode(
+      await client.callTool({
+        name: 'wid_create_task',
+        arguments: {
+          title: 'Other context',
+          context: 'Pesquisa / Cliente Á',
+          idempotencyKey: 'context-create',
+        },
+      }),
+    );
+    assert.equal(other.task.context, 'Pesquisa / Cliente Á');
+    const groups = decode(await client.callTool({ name: 'wid_list_contexts', arguments: {} }));
+    assert.ok(groups.some((group: { name: string }) => group.name === 'Pesquisa / Cliente Á'));
+    const isolated = decode(
+      await client.callTool({
+        name: 'wid_report_month',
+        arguments: { month: '2026-11', context: 'Pesquisa / Cliente Á' },
+      }),
+    );
+    assert.equal(isolated.totals.humanMinutes, 0);
+    const moved = decode(
+      await client.callTool({
+        name: 'wid_record_event',
+        arguments: {
+          taskId: created.task.id,
+          kind: 'context_changed',
+          context: 'Pesquisa / Cliente Á',
+          note: 'Classificação definida pelo agente.',
+          idempotencyKey: 'context-move',
+        },
+      }),
+    );
+    assert.equal(moved.event.previousContext, 'OUTROS');
+    assert.equal(moved.task.id, created.task.id);
+    const scoped = decode(
+      await client.callTool({
+        name: 'wid_report_month',
+        arguments: { month: '2026-11', context: 'pesquisa / cliente a' },
+      }),
+    );
+    assert.equal(scoped.totals.humanMinutes, 90);
+    const oldScope = decode(
+      await client.callTool({
+        name: 'wid_report_month',
+        arguments: { month: '2026-11', context: 'OUTROS' },
+      }),
+    );
+    assert.equal(oldScope.totals.humanMinutes, 0);
+    const viaStdioApi = (await (
+      await fetch(
+        `${url}/api/agent/codex/snapshot?context=${encodeURIComponent('Pesquisa / Cliente Á')}`,
+      )
+    ).json()) as { tasks: unknown[] };
+    assert.equal(viaStdioApi.tasks.length, 2);
+    const filteredExport = (await (await fetch(`${url}/api/export?context=OUTROS`)).json()) as {
+      tasks: unknown[];
+      events: unknown[];
+    };
+    assert.equal(filteredExport.tasks.length, 0);
+    assert.equal(filteredExport.events.length, 0);
     await settings.update((current) => ({
       ...current,
       agents: { ...current.agents, codex: false },

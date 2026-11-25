@@ -123,6 +123,11 @@ export function TimelineEvent({
       </div>
       <div className="collapse-content text-sm space-y-3">
         <p className="whitespace-pre-wrap break-words">{event.note}</p>
+        {event.kind === 'context_changed' && (
+          <p className="text-xs text-base-content/60">
+            {event.previousContext} → {event.context}
+          </p>
+        )}
         <button className="btn btn-ghost btn-xs" onClick={onSelect}>
           Abrir tarefa
           <ArrowUpRight size={13} />

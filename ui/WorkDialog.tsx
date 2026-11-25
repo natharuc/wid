@@ -2,6 +2,8 @@ import { useRef, useEffect, useState, type FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { api, statusLabel, type Task } from './api';
 import { FormField } from './FormField';
+import { ContextInput } from './ContextControls';
+import type { ContextSummary } from '../src/domain/context';
 const recordTypes = [
   ['progressed', 'Avanço'],
   ['started', 'Iniciar trabalho'],
@@ -11,15 +13,20 @@ const recordTypes = [
   ['completed', 'Concluir'],
   ['cancelled', 'Cancelar'],
   ['corrected', 'Corrigir um registro'],
+  ['context_changed', 'Alterar contexto'],
 ] as const;
 export function WorkDialog({
   task,
   day,
+  contexts,
+  defaultContext,
   onClose,
   onSaved,
 }: {
   task?: Task;
   day: string;
+  contexts: ContextSummary[];
+  defaultContext: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -44,6 +51,7 @@ export function WorkDialog({
           note: data.get('note'),
           idempotencyKey: crypto.randomUUID(),
           ...(kind === 'corrected' ? { correctsEventId: data.get('correctsEventId') } : {}),
+          ...(kind === 'context_changed' ? { context: data.get('context') } : {}),
           ...(['effort', 'corrected'].includes(kind) && data.get('minutes') !== ''
             ? {
                 effort: {
@@ -59,6 +67,7 @@ export function WorkDialog({
         const url = String(data.get('reference') ?? '').trim();
         await api('tasks', {
           title: data.get('title'),
+          context: data.get('context'),
           company: data.get('company'),
           project: data.get('project'),
           note: data.get('note') || undefined,
@@ -92,7 +101,7 @@ export function WorkDialog({
             </h2>
             {task && (
               <p className="text-sm text-base-content/60 mt-1">
-                {statusLabel[task.status]} · {task.project || 'Sem projeto'}
+                {statusLabel[task.status]} · {task.context} · {task.project || 'Sem projeto'}
               </p>
             )}
           </div>
@@ -118,6 +127,7 @@ export function WorkDialog({
                   placeholder="Ex.: Revisar autenticação"
                 />
               </FormField>
+              <ContextInput contexts={contexts} defaultValue={defaultContext} />
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField label="Empresa">
                   <input
@@ -165,6 +175,14 @@ export function WorkDialog({
                 ))}
               </select>
             </FormField>
+          )}
+          {task && kind === 'context_changed' && (
+            <>
+              <ContextInput contexts={contexts} defaultValue={task.context} />
+              <p className="text-xs text-base-content/60">
+                O agrupamento de todo o histórico desta tarefa seguirá o novo contexto.
+              </p>
+            </>
           )}
           {task && kind === 'corrected' && (
             <FormField label="ID do evento original">

@@ -1,4 +1,7 @@
-# wid.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="brand/01-logo/svg/wid-logo-branco.svg">
+  <img src="brand/01-logo/svg/wid-logo-grafite.svg" alt="WID" width="280">
+</picture>
 
 **What I did?** Registro local de tarefas e dedicação humana, com painel web e MCP para agentes.
 
@@ -27,7 +30,7 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.2.1 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.3.0 está distribuída pelo GitHub; não está publicada no registro npm.
 
 ### Atualizar a instalação
 
@@ -40,7 +43,7 @@ wid start --background
 wid --version
 ```
 
-Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.2.1, use `https://github.com/natharuc/wid/releases/download/v0.2.1/wid.tgz`.
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.3.0, use `https://github.com/natharuc/wid/releases/download/v0.3.0/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -51,6 +54,7 @@ npm install -g github:natharuc/wid
 ## MVP
 
 - Tarefas com empresa, projeto e referências opcionais a chats, issues, Tasks e PRs.
+- Contextos dinâmicos escolhidos pelo agente: texto livre, grupos e relatórios filtrados, com reclassificação auditável.
 - Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
 - Tempo por **tarefa/dia**, estimado pelo agente com evidência e confiança ou informado pelo usuário.
 - Visão diária, linha do tempo e calendário mensal com cobertura explícita.
@@ -85,13 +89,43 @@ O mês soma os totais diários por tarefa. **É um total registrado com cobertur
 wid report 2026-11
 ```
 
+## Contextos dinâmicos
+
+O agente decide o contexto de cada tarefa, separado de empresa e projeto. **Não existe uma lista fechada nem um cadastro obrigatório.** `MAG`, `POLLARIS`, `SEDUCAO` e `OUTROS` são exemplos; `Pesquisa / Cliente Á` ou qualquer outro nome também é válido.
+
+Antes de criar uma tarefa, o agente consulta `wid_list_contexts` para reaproveitar um nome quando fizer sentido e envia `context` explicitamente em `wid_create_task`. Um nome novo cria o grupo a partir desse registro. O painel monta a lista de grupos dinamicamente, agrupa as tarefas e permite filtrar atividades, horas diárias e mensais. A comparação ignora caixa, acentos e espaços repetidos; o nome legível é preservado.
+
+```json
+{
+  "title": "Revisar o fluxo de autenticação",
+  "context": "Pesquisa / Cliente Á",
+  "project": "Portal",
+  "idempotencyKey": "session-123:auth-intention"
+}
+```
+
+Tarefas antigas sem contexto aparecem em `OUTROS`. O agente pode classificá-las ou corrigir um grupo sem duplicar a tarefa:
+
+```json
+{
+  "taskId": "UUID da tarefa existente",
+  "kind": "context_changed",
+  "context": "Pesquisa / Cliente Á",
+  "note": "Classificação definida para este trabalho.",
+  "idempotencyKey": "session-123:classify-auth"
+}
+```
+
+Essa alteração é registrada no histórico, com contexto anterior e novo. **Todo o histórico e as horas da tarefa passam a ser agrupados pelo contexto atual.** Para consultas de um grupo, envie `context` em `wid_list_tasks`, `wid_report_day` e `wid_report_month`; omita para consultar todos. O MCP e as instruções globais deixam essa escolha explícita. A API continua aceitando clientes antigos sem o campo, usando `OUTROS`; isso é compatibilidade, não uma restrição de catálogo.
+
 ## MCP
 
 | Ferramenta | Uso |
 | --- | --- |
 | `wid_list_tasks` | Buscar/reutilizar tarefas e consultar o histórico. |
+| `wid_list_contexts` | Consultar nomes dinâmicos de contextos e quantidade de tarefas para reutilizar ou criar outro nome. |
 | `wid_create_task` | Registrar a intenção de trabalho. |
-| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo ou correção. |
+| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo, correção ou `context_changed`. |
 | `wid_estimate_day` | Revisar o total humano estimado de uma tarefa/dia com justificativa e confiança. |
 | `wid_report_day` | Consultar horas por tarefa e a cobertura do dia. |
 | `wid_report_month` | Consultar o total mensal, parcelas medidas/estimadas e lacunas. |
@@ -151,6 +185,8 @@ Defina `WID_DATABASE_URL` no ambiente do processo servidor, apontando para um **
 Esse modo usa o adaptador `pg`. O fluxo local padrão é testado com PostgreSQL embutido; para usar um servidor externo, valide a conexão e permissões no seu ambiente. Trocar de motor não migra os dados automaticamente.
 
 ## Desenvolvimento
+
+O checkout local principal fica em `C:\nac\wid`. O kit original de identidade visual fica em `brand/`: logo em SVG para cada tema, símbolo e ícones de web/aplicativo. Os SVGs usados no painel são importados diretamente dos arquivos mestres; `ui/public` contém os arquivos preparados de favicon e ícones de aplicativo para servir em URLs estáveis. Não redesenhe nem altere as proporções dos ativos. O manifesto declara a identidade de aplicativo; esta versão não oferece cache offline.
 
 ```sh
 git clone https://github.com/natharuc/wid.git

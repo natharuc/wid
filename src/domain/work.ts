@@ -12,6 +12,7 @@ export const eventKinds = [
   'cancelled',
   'effort',
   'corrected',
+  'context_changed',
 ] as const;
 export const statuses = ['planned', 'active', 'blocked', 'completed', 'cancelled'] as const;
 export type Status = (typeof statuses)[number];
@@ -60,6 +61,14 @@ export const sourceSchema = z.object({
   sessionId: z.string().max(200).optional(),
   chatUrl: z.string().max(2048).optional(),
 });
+export const contextSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(120)
+  .describe(
+    'Free-form work context chosen by the agent, e.g. MAG, POLLARIS, SEDUCAO or any other name. Reuse wid_list_contexts names when appropriate; there is no fixed catalog. Separate from company/project.',
+  );
 export const createSchema = z.object({
   title: z.string().trim().min(1).max(240),
   company: z.string().trim().max(100).default(''),
@@ -68,6 +77,7 @@ export const createSchema = z.object({
   note: text.optional(),
   occurredAt: z.string().datetime({ offset: true }).optional(),
   idempotencyKey: z.string().min(1).max(200),
+  context: contextSchema.optional(),
 });
 export const recordSchema = z
   .object({
@@ -78,8 +88,17 @@ export const recordSchema = z
     effort: effortSchema.optional(),
     correctsEventId: z.string().uuid().optional(),
     idempotencyKey: z.string().min(1).max(200),
+    context: contextSchema.optional(),
   })
   .superRefine((value, ctx) => {
+    if (value.kind === 'context_changed' && !value.context)
+      ctx.addIssue({ code: 'custom', message: 'Informe o novo contexto.', path: ['context'] });
+    if (value.kind !== 'context_changed' && value.context)
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Use context_changed para alterar o contexto.',
+        path: ['context'],
+      });
     if (value.kind === 'corrected' && !value.correctsEventId)
       ctx.addIssue({
         code: 'custom',
@@ -105,6 +124,7 @@ export type Source = z.infer<typeof sourceSchema>;
 export interface Task {
   id: string;
   title: string;
+  context: string;
   company: string;
   project: string;
   status: Status;
@@ -122,6 +142,8 @@ export interface WorkEvent {
   recordedAt: string;
   effort?: z.infer<typeof effortSchema>;
   correctsEventId?: string;
+  context?: string;
+  previousContext?: string;
 }
 export interface CommandResult {
   task: Task;
