@@ -1,0 +1,179 @@
+# wid.
+
+**What I did?** Registro local de tarefas e dedicação humana, com painel web e MCP para agentes.
+
+O WID responde **o que fiz em cada dia, quanto tempo dediquei a cada tarefa e quantas horas tenho registradas no mês**. Intenções, avanços, decisões, bloqueios e entregas ficam persistidos com sua origem. Estimativas continuam identificadas como estimativas.
+
+## Rodar localmente
+
+Node.js **22.13+**. Não precisa de Docker nem de instalar um servidor de banco: o padrão é PostgreSQL embutido com [PGlite](https://pglite.dev/), persistido em disco.
+
+Instale o pacote compilado da release:
+
+```sh
+npm install -g https://github.com/natharuc/wid/releases/download/v0.1.0/natharuc-wid-0.1.0.tgz
+wid setup
+wid start --background
+```
+
+Abra **http://127.0.0.1:4318**. Ative os agentes pela página **Agentes** ou pela CLI:
+
+```sh
+wid agent codex
+# opcionais, se você usa esses agentes:
+wid agent claude
+wid agent cursor
+```
+
+Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
+
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.1.0 está distribuída pelo GitHub; não está publicada no registro npm.
+
+Também é possível instalar da fonte, com build local automático:
+
+```sh
+npm install -g github:natharuc/wid
+```
+
+## MVP
+
+- Tarefas com empresa, projeto e referências opcionais a chats, issues, Tasks e PRs.
+- Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
+- Tempo por **tarefa/dia**, estimado pelo agente com evidência e confiança ou informado pelo usuário.
+- Visão diária, linha do tempo e calendário mensal com cobertura explícita.
+- MCP local por **stdio** e **Streamable HTTP**, usando o SDK oficial.
+- Detecção e ativação/desativação de Codex, Claude Code e Cursor.
+- Instruções globais gerenciadas para Codex e Claude Code; instruções no MCP para todos.
+- Hook opcional `SessionStart` no Claude Code, como lembrete de registro.
+- Exportação JSON com fontes, horários originais e histórico de correções.
+- URLs de GitHub e Azure DevOps como atalhos configuráveis. Sem sincronização ou credenciais externas nesta versão.
+
+## Como as horas são calculadas
+
+Cada registro de tempo é um **total acumulado da tarefa naquele dia e categoria**. Atualizar uma estimativa de 40 para 60 minutos resulta em **60**, não 100. Uma nova revisão tem outra chave idempotente; reenviar o mesmo comando usa a mesma chave e não duplica o registro.
+
+Categorias:
+
+| Categoria | Significado |
+| --- | --- |
+| `human_estimated` | Total humano estimado para a tarefa/dia; requer justificativa e confiança. |
+| `human_measured` | Total humano medido ou explicitamente informado pelo usuário para a tarefa/dia. |
+| `agent_run` | Total de execução do agente; fora das horas humanas. |
+| `wait` | Total de espera ou jobs; fora das horas humanas. |
+
+Para cada tarefa/dia, o total humano é o **maior entre o medido e o estimado**. A parcela estimada do relatório é a diferença positiva entre estimativa total e medição. Exemplo: estimativa de 90 min com 30 min medidos → 90 min humanos, sendo 30 medidos + 60 estimados. Se você tem apenas uma parte adicional estimada, informe na estimativa o total, incluindo o já medido.
+
+O agente deve ler o relatório do dia antes de revisar uma estimativa, considerar outras sessões e informar a base da estimativa e a confiança. Tempo decorrido entre mensagens, inatividade, execução delegada e espera não equivalem a trabalho humano. Se a conversa não fornece evidência suficiente, o tempo continua desconhecido.
+
+O mês soma os totais diários por tarefa. **É um total registrado com cobertura parcial**, não uma declaração de jornada completa. Dias sem evidência não significam ausência de trabalho. O WID alerta sobre dias acima de 24h; sobreposição entre tarefas precisa ser revisada mesmo abaixo desse limite. O MVP não contém cronômetro nem detector de presença.
+
+```sh
+wid report 2026-11
+```
+
+## MCP
+
+| Ferramenta | Uso |
+| --- | --- |
+| `wid_list_tasks` | Buscar/reutilizar tarefas e consultar o histórico. |
+| `wid_create_task` | Registrar a intenção de trabalho. |
+| `wid_record_event` | Registrar andamento, decisão, bloqueio, entrega, tempo ou correção. |
+| `wid_estimate_day` | Revisar o total humano estimado de uma tarefa/dia com justificativa e confiança. |
+| `wid_report_day` | Consultar horas por tarefa e a cobertura do dia. |
+| `wid_report_month` | Consultar o total mensal, parcelas medidas/estimadas e lacunas. |
+
+Exemplo de `wid_estimate_day`:
+
+```json
+{
+  "taskId": "UUID retornado por wid_create_task",
+  "day": "2026-11-25",
+  "minutes": 45,
+  "basis": "Discussão e revisão ativa do fluxo. Tempo do build excluído; início sem medição precisa.",
+  "confidence": "low",
+  "idempotencyKey": "session-123:task-456:2026-11-25:estimate-v1",
+  "sessionId": "session-123"
+}
+```
+
+O stdio inicia o servidor local em background quando necessário; só esse servidor abre o banco embutido. Outros clientes podem usar `http://127.0.0.1:4318/mcp/codex` (ou `/claude`, `/cursor`) com o respectivo agente ativado. O serviço não escuta na rede externa.
+
+O MCP fornece instruções de uso, mas **o agente precisa segui-las**. A versão inicial não intercepta todas as conversas nem garante registro por todos os clientes. O hook do Claude é um lembrete, não um coletor de transcrições nem um medidor de tempo. Clientes em nuvem não acessam este localhost.
+
+## Configuração de agentes
+
+O WID altera somente sua própria entrada e blocos marcados. Uma entrada `wid` de outra instalação gera conflito em vez de sobrescrita.
+
+| Agente | MCP | Instruções |
+| --- | --- | --- |
+| Codex | `$CODEX_HOME/config.toml` ou `~/.codex/config.toml` | Bloco marcado no `AGENTS.md` global. |
+| Claude Code | `~/.claude.json` | Bloco marcado no `~/.claude/CLAUDE.md`. |
+| Cursor | `~/.cursor/mcp.json` | Orientações enviadas pelo próprio MCP. |
+
+```sh
+wid agent codex --disable
+wid hook-install claude
+wid hook-install claude --disable
+```
+
+Desativar Claude remove também o hook desta instalação. O hook nunca registra o prompt bruto. Comandos usam o caminho absoluto do Node e da instalação; se mover ou reinstalar em outro caminho, desative na instalação antiga e ative na nova.
+
+## Dados e privacidade
+
+O diretório padrão é `%LOCALAPPDATA%/wid` no Windows e `~/.local/share/wid` nas demais plataformas. Contém `settings.json`, banco `postgres/` e um lock do processo ativo. Altere com `WID_DATA_DIR` ou `--data-dir` (use o mesmo diretório nos comandos e agentes).
+
+- Sem telemetria, importação de conversas, captura de tela ou upload automático.
+- Registre resumos do trabalho; nunca prompts integrais, credenciais ou dados sensíveis.
+- O banco e os arquivos de configuração são locais; proteja o acesso à sua conta e ao disco. Não há criptografia de aplicação nem autenticação entre processos do mesmo usuário/máquina.
+- HTTP restringe host e origem a localhost e exige cabeçalho próprio nas mutações da API. Não há CORS para sites externos.
+- Correções acrescentam eventos; originais são preservados. Para corrigir tempo, informe `correctsEventId`, categoria, dia e total corrigido. Cada original admite uma correção; revisões posteriores de totais usam novos eventos de tempo.
+- Exportação JSON no painel. Importação e restauração de JSON ficam fora do MVP.
+- Para backup recuperável do banco embutido, pare o WID e copie o diretório de dados. Não copie um banco embutido em uso.
+
+### PostgreSQL externo (opcional)
+
+Defina `WID_DATABASE_URL` no ambiente do processo servidor, apontando para um **banco exclusivo do WID**, e execute `wid start`. O esquema usa tabelas `wid_*`. O WID não cria banco/usuário no servidor e não grava a connection string em configurações de agentes ou exportações.
+
+Esse modo usa o adaptador `pg`. O fluxo local padrão é testado com PostgreSQL embutido; para usar um servidor externo, valide a conexão e permissões no seu ambiente. Trocar de motor não migra os dados automaticamente.
+
+## Desenvolvimento
+
+```sh
+git clone https://github.com/natharuc/wid.git
+cd wid
+npm install
+npm run typecheck
+npm test
+npm run build
+npm start
+```
+
+`npm install` executa o build via `prepare`. Se o PATH exceder o limite do `cmd.exe` no Windows, use um terminal com PATH reduzido ou `npm --script-shell pwsh install` / `npm --script-shell pwsh run build`.
+
+Estrutura:
+
+```text
+src/domain/           contratos, validações, estados e cálculo de tempo
+src/application/      casos de uso e porta de persistência
+src/infrastructure/   PostgreSQL, configurações e integração com agentes
+src/interface/        HTTP, MCP e stdio
+ui/                   painel React
+tests/                domínio, banco real embutido, HTTP/MCP e configuração isolada
+```
+
+O domínio não conhece HTTP, MCP, interface web nem banco. O serviço de aplicação depende da porta `WorkStore`; a infraestrutura implementa essa porta. As interfaces usam os mesmos casos de uso. Transações garantem atomicidade entre tarefa, evento e idempotência; a projeção atual é acompanhada por eventos imutáveis.
+
+## Próximos passos
+
+Publicação no registro npm; conectores autenticados de leitura para GitHub/Azure DevOps; temporizador humano explícito; mais agentes e hooks documentados; paginação, filtros e cobertura declarada pelo usuário; importação e recuperação de exportações.
+
+## Referências de implementação
+
+- [MCP TypeScript SDK](https://ts.sdk.modelcontextprotocol.io/server) e [transporte local e HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
+- [Codex MCP](https://developers.openai.com/codex/mcp) e [instruções AGENTS.md](https://developers.openai.com/codex/guides/agents-md).
+- [Claude Code MCP](https://code.claude.com/docs/en/mcp) e [hooks](https://code.claude.com/docs/en/hooks).
+- [Cursor MCP](https://cursor.com/docs/mcp).
+
+## Licença
+
+MIT.

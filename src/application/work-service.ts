@@ -1,0 +1,105 @@
+import { createHash, randomUUID } from 'node:crypto';
+import {
+  createSchema,
+  nextStatus,
+  recordSchema,
+  sourceSchema,
+  WorkError,
+  type Source,
+  type Task,
+  type WorkEvent,
+} from '../domain/work.js';
+import type { WorkStore } from './ports.js';
+
+export class WorkService {
+  constructor(
+    private readonly store: WorkStore,
+    private readonly now = () => new Date().toISOString(),
+  ) {}
+  async create(input: unknown, identity: Source) {
+    const data = createSchema.parse(input);
+    const source = sourceSchema.parse(identity);
+    return this.store.command(
+      source,
+      data.idempotencyKey,
+      this.hash({ action: 'create', data, source }),
+      async (unit) => {
+        const now = this.now();
+        const occurredAt = data.occurredAt ?? now;
+        this.validateTime(occurredAt, now);
+        const task: Task = {
+          id: randomUUID(),
+          title: data.title,
+          company: data.company,
+          project: data.project,
+          references: data.references,
+          status: 'planned',
+          createdAt: now,
+          updatedAt: now,
+        };
+        const event: WorkEvent = {
+          id: randomUUID(),
+          taskId: task.id,
+          kind: 'planned',
+          note: data.note ?? data.title,
+          source,
+          occurredAt,
+          recordedAt: now,
+        };
+        await unit.saveTask(task, true);
+        await unit.append(event);
+        return { task, event };
+      },
+    );
+  }
+  async record(input: unknown, identity: Source) {
+    const data = recordSchema.parse(input);
+    const source = sourceSchema.parse(identity);
+    return this.store.command(
+      source,
+      data.idempotencyKey,
+      this.hash({ action: 'record', data, source }),
+      async (unit) => {
+        const task = await unit.task(data.taskId);
+        if (!task) throw new WorkError('Tarefa não encontrada.', 404);
+        const now = this.now();
+        const occurredAt = data.occurredAt ?? now;
+        this.validateTime(occurredAt, now);
+        if (data.correctsEventId) {
+          const original = await unit.event(data.correctsEventId);
+          if (!original || original.taskId !== task.id)
+            throw new WorkError('O evento corrigido deve pertencer à tarefa.');
+          // Corrections are append-only annotations and replacement effort, never silent status rewrites.
+          if (original.kind === 'corrected')
+            throw new WorkError('Corrija o evento original, não outra correção.');
+        }
+        task.status = nextStatus(task.status, data.kind);
+        task.updatedAt = now;
+        const event: WorkEvent = {
+          id: randomUUID(),
+          taskId: task.id,
+          kind: data.kind,
+          note: data.note,
+          source,
+          occurredAt,
+          recordedAt: now,
+          effort: data.effort,
+          correctsEventId: data.correctsEventId,
+        };
+        await unit.append(event);
+        await unit.saveTask(task);
+        return { task, event };
+      },
+    );
+  }
+  async snapshot() {
+    return { tasks: await this.store.tasks(), events: await this.store.events() };
+  }
+  private validateTime(value: string, now: string) {
+    if (Date.parse(value) > Date.parse(now) + 300_000)
+      throw new WorkError('Use um horário ocorrido; registre intenções futuras na descrição.');
+  }
+  private hash(value: unknown) {
+    return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  }
+}
