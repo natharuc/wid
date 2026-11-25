@@ -8,6 +8,7 @@ import {
   type Source,
 } from '../domain/work.js';
 import { rules } from '../infrastructure/agent-rules.js';
+import { VERSION } from '../version.js';
 
 export interface WorkGateway {
   create(input: unknown, source: Source): Promise<unknown>;
@@ -27,7 +28,7 @@ const estimateSchema = z.object({
   ...identity,
 });
 export function makeMcp(gateway: WorkGateway, agent: string) {
-  const server = new McpServer({ name: 'wid', version: '0.1.0' }, { instructions: rules });
+  const server = new McpServer({ name: 'wid', version: VERSION }, { instructions: rules });
   const result = async (action: () => Promise<unknown>) => {
     try {
       return { content: [{ type: 'text' as const, text: JSON.stringify(await action()) }] };

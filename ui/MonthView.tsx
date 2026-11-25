@@ -1,5 +1,6 @@
-import { ArrowDownToLine, CalendarDays, Clock3 } from 'lucide-react';
+import { Download, Info } from 'lucide-react';
 import { hours, type MonthReport } from './api';
+import { Metric } from './WorkComponents';
 export function MonthView({
   monthly,
   month,
@@ -11,110 +12,94 @@ export function MonthView({
   setMonth: (month: string) => void;
   chooseDay: (day: string) => void;
 }) {
-  const monthTitle = new Intl.DateTimeFormat('pt-BR', {
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(month + '-01T12:00:00Z'));
+  const offset = (new Date(`${month}-01T12:00:00Z`).getUTCDay() + 6) % 7;
   return (
     <>
-      <div className="date-row">
-        <label className="month-picker">
-          <CalendarDays size={18} />
-          <input
-            aria-label="Mês consultado"
-            type="month"
-            value={month}
-            onChange={(event) => event.target.value && setMonth(event.target.value)}
-          />
-        </label>
-        <span className="coverage">
-          <i />
-          Cobertura parcial
-        </span>
-        <a href="/api/export" className="text-btn">
-          <ArrowDownToLine size={15} />
+      <div className="flex flex-wrap items-center gap-3">
+        <input
+          className="input w-auto"
+          aria-label="Mês consultado"
+          type="month"
+          value={month}
+          onChange={(event) => event.target.value && setMonth(event.target.value)}
+        />
+        <span className="badge badge-warning badge-soft">Cobertura parcial</span>
+        <a href="/api/export" download className="btn btn-outline btn-sm sm:ml-auto">
+          <Download size={16} />
           Exportar
         </a>
       </div>
-      <div className="month-hero">
-        <div>
-          <span className="eyebrow">
-            HORAS HUMANAS REGISTRADAS · {monthTitle.toLocaleUpperCase()}
-          </span>
-          <div className="month-total">
-            {hours(monthly.totals.humanMinutes)}
-            <span>
-              {hours(monthly.totals.measuredMinutes)} medidas
-              <br />
-              {hours(monthly.totals.estimatedMinutes)} estimadas
-            </span>
+      <div className="stats stats-vertical sm:stats-horizontal w-full border border-base-300 bg-base-100">
+        <Metric
+          label="Horas humanas registradas"
+          value={hours(monthly.totals.humanMinutes)}
+          description={`${hours(monthly.totals.measuredMinutes)} medidas · ${hours(monthly.totals.estimatedMinutes)} estimadas`}
+          accent
+        />
+        <Metric
+          label="Dias com registro"
+          value={String(monthly.coveredDays)}
+          description={`${monthly.unknownDays} dias sem registros`}
+        />
+        <Metric
+          label="Dias sem tempo informado"
+          value={String(monthly.daysWithoutTime)}
+          description="Há atividade, mas sem duração"
+        />
+      </div>
+      <section className="card bg-base-100 border border-base-300">
+        <div className="card-body p-4 sm:p-6 gap-5">
+          <h2 className="card-title text-base">Dedicação por dia</h2>
+          <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center">
+            {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((label) => (
+              <div key={label} className="py-2 text-xs font-medium text-base-content/60">
+                {label}
+              </div>
+            ))}
+            {Array.from({ length: offset }, (_, i) => (
+              <span key={`pad-${i}`} />
+            ))}
+            {monthly.days.map((item) => (
+              <button
+                key={item.day}
+                onClick={() => chooseDay(item.day)}
+                aria-label={`${Number(item.day.slice(8))}, ${item.humanMinutes ? hours(item.humanMinutes) : item.events ? 'tempo não informado' : 'sem registro'}`}
+                className={`btn h-auto min-h-20 flex-col gap-1 px-1 py-3 sm:min-h-24 sm:gap-2 ${item.events ? 'btn-soft btn-primary' : 'btn-ghost border-base-300'}`}
+              >
+                <span className="text-xs">{Number(item.day.slice(8))}</span>
+                <span
+                  className={
+                    item.humanMinutes
+                      ? 'text-xs sm:text-base tabular-nums'
+                      : 'text-xs font-normal text-base-content/45'
+                  }
+                >
+                  {item.humanMinutes ? hours(item.humanMinutes) : '—'}
+                </span>
+                {item.events > 0 && (
+                  <span className="hidden sm:block text-xs font-normal">
+                    {item.tasks} tarefa{item.tasks > 1 ? 's' : ''}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
-          <p>
-            O total inclui estimativas de dedicação humana. {monthly.unknownDays} dias sem registros
-            e {monthly.daysWithoutTime} dias registrados sem estimativa de tempo.
+          <p className="text-xs text-base-content/60">
+            — Sem tempo registrado. Clique em um dia para consultar as tarefas.
           </p>
         </div>
-        <div className="month-coverage">
-          <span>{String(monthly.coveredDays).padStart(2, '0')}</span>
-          <p>
-            dias com
-            <br />
-            algum registro
-          </p>
-        </div>
-      </div>
-      <div className="section-title">
-        <h2>Dedicação por dia</h2>
-        <span className="mono muted">{monthTitle}</span>
-      </div>
-      <div className="calendar">
-        <div className="calendar-week">
-          {['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB', 'DOM'].map((label) => (
-            <span key={label}>{label}</span>
-          ))}
-        </div>
-        <div className="calendar-days">
-          {Array.from(
-            { length: (new Date(`${month}-01T12:00:00Z`).getUTCDay() + 6) % 7 },
-            (_, index) => (
-              <div key={`pad${index}`} className="calendar-pad" />
-            ),
-          )}
-          {monthly.days.map((item) => (
-            <button
-              key={item.day}
-              onClick={() => chooseDay(item.day)}
-              className={`calendar-day ${item.events ? 'has-events' : ''} ${item.humanMinutes ? 'has-time' : ''}`}
-            >
-              <span>{Number(item.day.slice(8))}</span>
-              <strong>
-                {item.humanMinutes
-                  ? hours(item.humanMinutes)
-                  : item.events
-                    ? 'Tempo não informado'
-                    : 'Sem registro'}
-              </strong>
-              {item.events > 0 && (
-                <small>
-                  {item.tasks} tarefa{item.tasks > 1 ? 's' : ''}
-                </small>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
+      </section>
       {monthly.warnings.map((message) => (
-        <p className="error" key={message}>
+        <div key={message} role="alert" className="alert alert-warning alert-soft">
           {message}
-        </p>
+        </div>
       ))}
-      <div className="notice">
-        <Clock3 size={18} />
-        <p>
-          Estimativas são totais por tarefa e dia, revisáveis pelo agente. Execução de agentes (
-          {hours(monthly.totals.agentMinutes)}) e espera ({hours(monthly.totals.waitMinutes)}) ficam
-          fora da dedicação humana. Revise tarefas simultâneas para evitar sobreposição.
+      <div className="alert alert-info alert-soft">
+        <Info size={20} />
+        <p className="text-sm">
+          O total inclui estimativas. Execução dos agentes ({hours(monthly.totals.agentMinutes)}) e
+          espera ({hours(monthly.totals.waitMinutes)}) ficam fora das horas humanas. Dias sem
+          registro têm cobertura desconhecida.
         </p>
       </div>
     </>

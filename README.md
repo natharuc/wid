@@ -11,7 +11,7 @@ Node.js **22.13+**. Não precisa de Docker nem de instalar um servidor de banco:
 Instale o pacote compilado da release:
 
 ```sh
-npm install -g https://github.com/natharuc/wid/releases/download/v0.1.0/natharuc-wid-0.1.0.tgz
+npm install -g https://github.com/natharuc/wid/releases/latest/download/wid.tgz
 wid setup
 wid start --background
 ```
@@ -27,7 +27,20 @@ wid agent cursor
 
 Abra uma **nova sessão do agente** para carregar o MCP e as instruções. `npm install` não modifica configurações globais; `wid setup` apenas detecta. A ativação é explícita e reversível.
 
-O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.1.0 está distribuída pelo GitHub; não está publicada no registro npm.
+O nome `wid` no npm já pertence a outro projeto. Este pacote se chama **`@natharuc/wid`**, com executável **`wid`**. A versão 0.2.0 está distribuída pelo GitHub; não está publicada no registro npm.
+
+### Atualizar a instalação
+
+A instalação por tarball não acompanha automaticamente as próximas releases com `npm update`. Para buscar a última versão publicada:
+
+```sh
+wid stop
+npm install -g --prefer-online https://github.com/natharuc/wid/releases/latest/download/wid.tgz
+wid start --background
+wid --version
+```
+
+Tarefas, configurações e histórico ficam no diretório de dados, separado do pacote. A atualização no mesmo caminho preserva a configuração dos agentes. Para fixar a release 0.2.0, use `https://github.com/natharuc/wid/releases/download/v0.2.0/wid.tgz`.
 
 Também é possível instalar da fonte, com build local automático:
 
@@ -41,6 +54,7 @@ npm install -g github:natharuc/wid
 - Histórico persistente: intenção, início, avanço, decisão, bloqueio, conclusão e cancelamento.
 - Tempo por **tarefa/dia**, estimado pelo agente com evidência e confiança ou informado pelo usuário.
 - Visão diária, linha do tempo e calendário mensal com cobertura explícita.
+- Interface React com componentes DaisyUI, tema corporate e layout Tailwind; sem CSS próprio.
 - MCP local por **stdio** e **Streamable HTTP**, usando o SDK oficial.
 - Detecção e ativação/desativação de Codex, Claude Code e Cursor.
 - Instruções globais gerenciadas para Codex e Claude Code; instruções no MCP para todos.
@@ -157,7 +171,7 @@ src/domain/           contratos, validações, estados e cálculo de tempo
 src/application/      casos de uso e porta de persistência
 src/infrastructure/   PostgreSQL, configurações e integração com agentes
 src/interface/        HTTP, MCP e stdio
-ui/                   painel React
+ui/                   painel React + DaisyUI + Tailwind
 tests/                domínio, banco real embutido, HTTP/MCP e configuração isolada
 ```
 
@@ -168,6 +182,8 @@ O domínio não conhece HTTP, MCP, interface web nem banco. O serviço de aplica
 Publicação no registro npm; conectores autenticados de leitura para GitHub/Azure DevOps; temporizador humano explícito; mais agentes e hooks documentados; paginação, filtros e cobertura declarada pelo usuário; importação e recuperação de exportações.
 
 ## Referências de implementação
+
+- [DaisyUI com Vite](https://daisyui.com/docs/install/vite/) e [temas prontos](https://daisyui.com/docs/themes/).
 
 - [MCP TypeScript SDK](https://ts.sdk.modelcontextprotocol.io/server) e [transporte local e HTTP](https://modelcontextprotocol.io/specification/2025-11-25/basic/transports).
 - [Codex MCP](https://developers.openai.com/codex/mcp) e [instruções AGENTS.md](https://developers.openai.com/codex/guides/agents-md).

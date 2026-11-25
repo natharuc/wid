@@ -1,4 +1,4 @@
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { localDay } from '../src/domain/time';
 import { hours, type DayReport } from './api';
 import { Metric } from './WorkComponents';
@@ -13,70 +13,68 @@ export function DayOverview({
   setDay: (day: string) => void;
   timezone: string;
 }) {
-  const dateTitle = new Intl.DateTimeFormat('pt-BR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(new Date(day + 'T12:00:00Z'));
   const changeDay = (offset: number) => {
-    const date = new Date(day + 'T12:00:00Z');
+    const date = new Date(`${day}T12:00:00Z`);
     date.setUTCDate(date.getUTCDate() + offset);
     setDay(date.toISOString().slice(0, 10));
   };
   return (
     <>
-      <div className="date-row">
-        <div className="date-control">
-          <button className="icon-btn" aria-label="Dia anterior" onClick={() => changeDay(-1)}>
-            <ChevronLeft size={16} />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="join">
+          <button
+            className="btn btn-square join-item bg-base-100"
+            aria-label="Dia anterior"
+            onClick={() => changeDay(-1)}
+          >
+            <ChevronLeft size={17} />
           </button>
-          <label className="date-label">
-            <CalendarDays size={16} />
-            <span>{dateTitle}</span>
-            <input
-              aria-label="Dia consultado"
-              type="date"
-              value={day}
-              onChange={(event) => event.target.value && setDay(event.target.value)}
-            />
-          </label>
-          <button className="icon-btn" aria-label="Próximo dia" onClick={() => changeDay(1)}>
-            <ChevronRight size={16} />
+          <input
+            className="input join-item w-auto"
+            aria-label="Dia consultado"
+            type="date"
+            value={day}
+            onChange={(event) => event.target.value && setDay(event.target.value)}
+          />
+          <button
+            className="btn btn-square join-item bg-base-100"
+            aria-label="Próximo dia"
+            onClick={() => changeDay(1)}
+          >
+            <ChevronRight size={17} />
           </button>
         </div>
         <button
-          className="text-btn"
+          className="btn btn-ghost btn-sm"
           onClick={() => setDay(localDay(new Date().toISOString(), timezone))}
         >
           Hoje
         </button>
-        <span className="coverage">
-          <i />
-          {daily?.coverage === 'unknown' ? 'Sem registros neste dia' : 'Cobertura parcial'}
+        <span className="badge badge-soft badge-warning sm:ml-auto">
+          {daily?.coverage === 'unknown' ? 'Sem registros' : 'Cobertura parcial'}
         </span>
       </div>
-      <div className="metrics">
+      <div className="stats stats-vertical md:stats-horizontal w-full border border-base-300 bg-base-100">
         <Metric
-          label="DEDICAÇÃO HUMANA"
+          label="Horas humanas registradas"
           value={hours(daily?.humanMinutes ?? 0)}
           description={`${hours(daily?.minutes.human_measured ?? 0)} medidas · ${hours(daily?.minutes.human_estimated ?? 0)} estimadas`}
           accent
         />
         <Metric
-          label="TAREFAS REGISTRADAS"
-          value={String(daily?.tasks ?? 0).padStart(2, '0')}
-          description={`${daily?.events ?? 0} eventos no dia`}
+          label="Tarefas no dia"
+          value={String(daily?.tasks ?? 0)}
+          description={`${daily?.events ?? 0} eventos registrados`}
         />
         <Metric
-          label="EXECUÇÃO DO AGENTE"
+          label="Execução do agente"
           value={hours(daily?.minutes.agent_run ?? 0)}
-          description="Registrada separadamente"
+          description="Fora das horas humanas"
         />
         <Metric
-          label="ESPERA / JOBS"
+          label="Espera / jobs"
           value={hours(daily?.minutes.wait ?? 0)}
-          description="Sem somar às horas humanas"
+          description="Fora das horas humanas"
         />
       </div>
     </>

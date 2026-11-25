@@ -5,6 +5,7 @@ import { defaultDataDir, agentIds } from './infrastructure/settings.js';
 import { rules } from './infrastructure/agent-rules.js';
 import { composition, ensureServer, isHealthy, runServer, serviceUrl } from './runtime.js';
 import { runStdio } from './interface/stdio.js';
+import { VERSION } from './version.js';
 
 async function main() {
   const { positionals, values } = parseArgs({
@@ -15,9 +16,11 @@ async function main() {
       background: { type: 'boolean' },
       disable: { type: 'boolean' },
       help: { type: 'boolean' },
+      version: { type: 'boolean' },
     },
   });
   const directory = resolve(values['data-dir'] ?? defaultDataDir());
+  if (values.version) return console.log(VERSION);
   const [command = 'start', target] = positionals;
   const { settings, agents } = composition(directory);
   if (values.help || command === 'help')
@@ -85,7 +88,8 @@ async function main() {
       break;
     case 'stop': {
       const url = await serviceUrl(directory);
-      if (!(await isHealthy(url, directory))) return console.log('WID is not running for this data directory.');
+      if (!(await isHealthy(url, directory)))
+        return console.log('WID is not running for this data directory.');
       await fetch(`${url}/api/shutdown`, { method: 'POST', headers: { 'X-WID-Client': 'wid' } });
       console.log('WID stopped.');
       break;

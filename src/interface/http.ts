@@ -7,6 +7,7 @@ import { daySchema, monthReport, sourceSchema, summarize, WorkError } from '../d
 import { agentIds, type AgentId, type SettingsStore } from '../infrastructure/settings.js';
 import type { AgentManager } from '../infrastructure/agents.js';
 import { makeMcp, type WorkGateway } from './mcp.js';
+import { VERSION } from '../version.js';
 
 export function createApp(options: {
   work: WorkService;
@@ -40,7 +41,7 @@ export function createApp(options: {
   });
   app.use(express.json({ limit: '128kb' }));
   app.get('/health', (_req, res) =>
-    res.json({ service: 'wid', version: '0.1.0', instanceId: options.instanceId }),
+    res.json({ service: 'wid', version: VERSION, instanceId: options.instanceId }),
   );
   const gateway: WorkGateway = {
     create: (input, source) => work.create(input, source),

@@ -1,3 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-export default defineConfig({ root: 'ui', plugins: [react()], build: { outDir: '../dist/web', emptyOutDir: true } });
+import tailwindcss from '@tailwindcss/vite';
+export default defineConfig({
+  root: 'ui',
+  plugins: [react(), tailwindcss()],
+  build: { outDir: '../dist/web', emptyOutDir: true },
+});
